@@ -1,0 +1,6 @@
+port: 9991
+http_port: 9992
+
+logging:
+  level: debug
+  encoding: console
