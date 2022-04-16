@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	pb "github.com/skema-dev/test/api/skema/test"
+	pb "github.com/skema-dev/skema-go/test/api/skema/test"
 )
 
 type rpcTestServer struct {
@@ -26,7 +26,7 @@ func (s *rpcTestServer) Heathcheck(ctx context.Context, req *pb.HealthcheckReque
 
 	log.Printf("Received from Heathcheck request: %v", req)
 	rsp = &pb.HealthcheckResponse{
-		// Msg: "Hello " + req.GetMsg(),
+		Result: "health check ok",
 	}
 
 	return rsp, err
@@ -39,7 +39,8 @@ func (s *rpcTestServer) Helloworld(ctx context.Context, req *pb.HelloRequest) (r
 
 	log.Printf("Received from Helloworld request: %v", req)
 	rsp = &pb.HelloReply{
-		// Msg: "Hello " + req.GetMsg(),
+		Msg:  "Hello world",
+		Code: "0",
 	}
 	return rsp, err
 }

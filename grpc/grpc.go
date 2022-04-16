@@ -88,6 +88,7 @@ func (gs *grpcServer) Serve() error {
 
 	gatewayPath := cfg.GetString("gateway.path")
 	if len(gatewayPath) > 0 {
+		logging.Infof("gateway path: %s", gatewayPath)
 		gs.httpMux.Handle(gatewayPath, gs.gatewayMux)
 	}
 
@@ -121,6 +122,7 @@ func (gs *grpcServer) Serve() error {
 	// running http gateway
 	go func() {
 		if gs.httpPort > 0 {
+			logging.Infof("http  started at %d", gs.httpPort)
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", gs.httpPort), gs.httpMux); err != nil {
 				logging.Fatalf(err.Error())
 			}
@@ -133,12 +135,12 @@ func (gs *grpcServer) Serve() error {
 // GetGatewayInfo 返回Http网关相关信息
 func (gs *grpcServer) GetGatewayInfo(imp interface{},
 	desc *grpc.ServiceDesc) (context.Context, *runtime.ServeMux, grpc.ClientConnInterface) {
-	methods := map[string]*grpc.MethodDesc{}
-	for _, m := range desc.Methods {
-		methods[m.MethodName] = &m
+	methods := make(map[string]*grpc.MethodDesc)
+
+	for i := range desc.Methods {
+		m := &desc.Methods[i]
+		methods[m.MethodName] = m
 	}
-
 	cc := &gatewayClient{svr: imp, methods: methods, interceptor: gs.interceptor}
-
 	return gs.ctx, gs.gatewayMux, cc
 }

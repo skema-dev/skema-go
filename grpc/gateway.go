@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/skema-dev/skema-go/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -17,9 +18,15 @@ type gatewayClient struct {
 	methods     map[string]*grpc.MethodDesc
 }
 
+type gatewayConfig struct {
+	Path         string
+	CloudAPIPath string `yaml:"cloudapi_path"`
+}
+
 type wrapGRPCHander func(http.Handler) http.Handler
 
-func (g *gatewayClient) Invoke(
+// Invoke ...
+func (c *gatewayClient) Invoke(
 	ctx context.Context,
 	fullMethod string,
 	args interface{},
@@ -28,44 +35,44 @@ func (g *gatewayClient) Invoke(
 ) error {
 	pos := strings.LastIndexByte(fullMethod, '/')
 	if pos < 0 {
-		return fmt.Errorf("invalid method name: %s", fullMethod)
+		return fmt.Errorf("wrong method name")
 	}
-
+	logging.Infof("Full method: %s", fullMethod)
 	method := fullMethod[pos+1:]
-	methodHandler, ok := g.methods[method]
+	methodHandler, ok := c.methods[method]
 	if !ok {
-		return fmt.Errorf("method [%s] doesn't exist", method)
+		return fmt.Errorf("method not found: %s", method)
 	}
-
+	logging.Infof("Find method: %s", method)
 	decoder := func(in interface{}) error {
+		logging.Debugf("parameter in: %v", in)
 		argsVal := reflect.ValueOf(args)
-		receiver := reflect.ValueOf(in).Elem()
+		rv := reflect.ValueOf(in).Elem()
+		logging.Debugf("parameter rv: %v", rv)
 		if !argsVal.IsZero() {
-			receiver.Set(argsVal.Elem())
+			rv.Set(argsVal.Elem())
 		}
 		return nil
 	}
-
 	// incoming ctx to outgoing ctx
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if ok {
 		ctx = metadata.NewIncomingContext(ctx, md)
 	}
-
-	rsp, err := methodHandler.Handler(g.svr, ctx, decoder, g.interceptor)
+	rsp, err := methodHandler.Handler(c.svr, ctx, decoder, c.interceptor)
 	if err != nil {
 		return err
 	}
-	receiver := reflect.ValueOf(reply).Elem()
+	rv := reflect.ValueOf(reply).Elem()
 	rspVal := reflect.ValueOf(rsp)
 	if !rspVal.IsZero() {
-		receiver.Set(rspVal.Elem())
+		rv.Set(rspVal.Elem())
 	}
-
 	return nil
 }
 
-func (g *gatewayClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string,
+// NewStream ...
+func (c *gatewayClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string,
 	opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, fmt.Errorf("un implemented")
 }
