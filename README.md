@@ -21,6 +21,7 @@ func main() {
 It's much simplified and prettier than the [standard grpc + gateway solution](https://grpc-ecosystem.github.io/grpc-gateway/docs/tutorials/adding_annotations/)  
 
 So, where is the port defined? Just some encapsulation?  Let's check the following features:
+<br/>
 
 ## IaC and Configuration
 Everything is defined in [/test/grpc.yaml](https://github.com/skema-dev/skema-go/tree/main/test/grpc.yaml), or you can also load from your remote endpoint like etcd or consul. Let's use the local grpc.yaml for example:  
@@ -39,6 +40,7 @@ logging:
 ```
   
 Pretty Clear. We can define the grpc listening port and http port in the config, as well as some other features. If you've used Django, this is pretty much theh same idea.  
+<br/>
 
 ## About the pkg
 Although it's design for grpc development, the following pkg could also be used individually.  
@@ -51,7 +53,27 @@ Although it's design for grpc development, the following pkg could also be used 
 
 * /grpcmux  
   this is the core component to integrate grpc + http in a graceful way.  
+<br/>
 
+
+## To Run The Code in Test
+just download the repo and execute the commands below:  
+```
+cd test
+go mod tidy
+go run .
+```
+  
+You'll see some startup information showing up. Then open another terminal and execute:  
+```
+# curl -X GET http://localhost:9992/api/healthcheck?msg=testuser
+{"result":"health check ok"}
+```
+  
+It's WORKING!!! Feel free to modify `server.go` to add anything you like, or use it as a start point for serious project.  
+<br/>
+  
+  
 ## Use in your own project  
 We do recommend using [Buf tool](https://buf.build/) or [Skemaloop gRPC Online Toolchain](https://www.skemaloop.dev) to create Protobuf file and the stubs. For testing purpose, you can use  [Skemaloop](https://www.skemaloop.dev) to generate Protobuf stubs in seconds and jump into coding.  
 
