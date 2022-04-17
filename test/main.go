@@ -15,10 +15,9 @@ func main() {
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2(), Interceptor3()),
 	)
+	pb.RegisterTestServer(grpcSrv, NewServer())
 
-	srvImp := NewServer()
-	pb.RegisterTestServer(grpcSrv, srvImp)
-
+	// for http gateway only.
 	ctx, mux, conn := grpcSrv.GetGatewayInfo()
 	pb.RegisterTestHandlerClient(ctx, mux, pb.NewTestClient(conn))
 

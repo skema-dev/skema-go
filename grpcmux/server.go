@@ -13,7 +13,6 @@ import (
 	"github.com/skema-dev/skema-go/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"go.uber.org/automaxprocs/maxprocs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -172,10 +171,6 @@ func (g *grpcServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Start serving grpc and http server
 func (g *grpcServer) Serve() error {
 	reflection.Register(g.server)
-
-	maxprocs.Set(maxprocs.Logger(func(s string, args ...interface{}) {
-		logging.Debugf(s, args...)
-	}))
 
 	g.httpMux.Handle(g.gatewayRoutePath, g)
 

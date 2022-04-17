@@ -8,7 +8,6 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/testify v1.7.1
-	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac
