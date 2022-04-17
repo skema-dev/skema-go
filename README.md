@@ -41,6 +41,8 @@ logging:
 Pretty Clear. We can define the grpc listening port and http port in the config, as well as some other features. If you've used Django, this is pretty much theh same idea.  
 
 ## About the pkg
+Although it's design for grpc development, the following pkg could also be used individually.  
+
 * /config  
   based on popular [github.com/spf13/viper](github.com/spf13/viper). It's used in grpcmux for configration handling.
   
@@ -50,3 +52,51 @@ Pretty Clear. We can define the grpc listening port and http port in the config,
 * /grpcmux  
   this is the core component to integrate grpc + http in a graceful way.  
 
+## Use in your own project  
+We do recommend using [Buf tool](https://buf.build/) or [Skemaloop gRPC Online Toolchain](https://www.skemaloop.dev) to create Protobuf file and the stubs. For testing purpose, you can use  [Skemaloop](https://www.skemaloop.dev) to generate Protobuf stubs in seconds and jump into coding.  
+
+After the protobuf stubs are generated, you can copy the code in [/test](https://github.com/skema-dev/skema-go/tree/main/test) folder, and change the imported pb location to your online grpc stub location.  
+For example, if you are using [Skemaloop](https://www.skemaloop.dev) to generate your stub, it's showing the final stub url in the `Usage` section, something like:   
+```
+Usage:
+go get github.com/skema-repo/likezhang-public/test1/grpc-go/BB/Ttt2
+```
+  
+Then go to the code you copied from [/test](https://github.com/skema-dev/skema-go/tree/main/test), modify the `main.go` and `server.go` files:  
+```
+// pb "github.com/skema-dev/skema-go/test/api/skema/test"   <===== remove or comment out this
+pb "github.com/skema-repo/likezhang-public/test1/grpc-go/BB/Ttt2" // <===== use this one from skemaloop
+```
+  
+Then, run the following commands:  
+```
+go mod tidy
+go run .
+```
+  
+In another terminal, use curl to verify:  
+```
+# curl -X GET http://localhost:9992/api/healthcheck?msg=testuser
+{"result":"health check ok"}
+```
+  
+If you have [grpcurl](https://github.com/fullstorydev/grpcurl) installed, you can also verify the grpc endpoints:  
+```
+# grpcurl --plaintext localhost:9991 describe
+BB.Ttt2.Test is a service:
+service Test {
+  rpc Heathcheck ( .BB.Ttt2.HealthcheckRequest ) returns ( .BB.Ttt2.HealthcheckResponse ) {
+    option (.google.api.http) = { get:"/api/healthcheck"  };
+  }
+  rpc Helloworld ( .BB.Ttt2.HelloRequest ) returns ( .BB.Ttt2.HelloReply ) {
+    option (.google.api.http) = { post:"/api/helloworld" body:"*"  };
+  }
+}
+grpc.reflection.v1alpha.ServerReflection is a service:
+service ServerReflection {
+  rpc ServerReflectionInfo ( stream .grpc.reflection.v1alpha.ServerReflectionRequest ) returns ( stream .grpc.reflection.v1alpha.ServerReflectionResponse );
+}
+```
+  
+
+Enjoy gRPC!
