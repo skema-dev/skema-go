@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	_ "embed"
+
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/test/api/skema/test"
@@ -11,7 +13,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+//go:embed grpc_2.yaml
+var yamlConfig []byte
+
 func main() {
+	grpcmux.SetServerConfig(string(yamlConfig))
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2(), Interceptor3()),
 	)

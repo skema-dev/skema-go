@@ -1,0 +1,9 @@
+port: 8881     # for grpc service
+http:
+  port: 8882   # for http service
+  gateway:
+    path: "/test/"
+
+logging:
+  level: debug # info | debug
+  encoding: json # console | json

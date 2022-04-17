@@ -47,32 +47,6 @@ func NewConfigWithString(data string) *Config {
 	}
 }
 
-func NewConfigWithEtcd(url string, path string) *Config {
-	v := viper.New()
-	v.AddRemoteProvider("etcd", url, path)
-	v.SetConfigType("yaml")
-	err := v.ReadRemoteConfig()
-	if err != nil {
-		logging.Errorf(err.Error())
-		return nil
-	}
-
-	return &Config{viperData: v}
-}
-
-func NewConfigWithConsul(endpoint string, key string) *Config {
-	v := viper.New()
-	v.AddRemoteProvider("consul", endpoint, key)
-	v.SetConfigType("json")
-	err := v.ReadRemoteConfig()
-	if err != nil {
-		logging.Errorf(err.Error())
-		return nil
-	}
-
-	return &Config{viperData: v}
-}
-
 func (c *Config) GetSubConfig(key string) *Config {
 	sub := c.viperData.Sub(key)
 	if sub == nil {

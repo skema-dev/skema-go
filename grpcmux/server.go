@@ -18,18 +18,13 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	envRemoteConfigType    = "SKEMA_CONFIG_REMOTE_TYPE"
-	envRemoteConfigURI     = "SKEMA_CONFIG_REMOTE_URI"
-	envRemoteConfigPathKey = "SKEMA_CONFIG_REMOTE_PATHKEY"
-)
-
 var (
+	serverConfig      *config.Config
 	configSearchPaths = []string{"./grpc.yaml", "./config/grpc.yaml", "/config/grpc.yaml"}
 )
 
 type grpcServer struct {
-	cfg    *config.Config
+	conf   *config.Config
 	server *grpc.Server
 	port   int
 
@@ -44,13 +39,20 @@ type grpcServer struct {
 	cancelFunc context.CancelFunc
 }
 
+// SetServerConfig
+// @value: raw string data user defined (in yaml). It could be from localfile or any remote resource
+// returns: None
+func SetServerConfig(value string) {
+	serverConfig = config.NewConfigWithString(value)
+}
+
 // Add additional setup besides standard grpc.NewServer
 func NewServer(opts ...grpc.ServerOption) *grpcServer {
-	conf := loadConfig()
+	serverConfig = loadConfig()
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	port := conf.GetInt("port")
-	httpPort := conf.GetInt("http.port")
+	port := serverConfig.GetInt("port")
+	httpPort := serverConfig.GetInt("http.port")
 	if port == httpPort {
 		logging.Fatalw("http port is the same as grpc port", "grpc port", port, "http port", httpPort)
 	}
@@ -76,7 +78,7 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 
 	gatewayPathPrefix := "/"
 	if httpPort > 0 {
-		gatewayPathPrefix = conf.GetString("http.gateway.path")
+		gatewayPathPrefix = serverConfig.GetString("http.gateway.path")
 		if gatewayPathPrefix == "" {
 			gatewayPathPrefix = "/"
 		} else {
@@ -87,14 +89,14 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 		logging.Infof("gateway path is set to %s", gatewayPathPrefix)
 	}
 
-	initComponents(conf)
+	initComponents(serverConfig)
 
 	srv := grpc.NewServer(
 		opts...,
 	)
 
 	return &grpcServer{
-		cfg:              conf,
+		conf:             serverConfig,
 		server:           srv,
 		httpMux:          http.NewServeMux(),
 		gatewayMux:       serverMux,
@@ -109,19 +111,9 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 
 // load config either from environment setting (for remote) or from local file
 func loadConfig() *config.Config {
-	// look for possible remote config
-	remoteConfigType := os.Getenv(envRemoteConfigType)
-	if remoteConfigType != "" {
-		switch remoteConfigType {
-		case "consul":
-			return config.NewConfigWithConsul(os.Getenv(envRemoteConfigURI), os.Getenv(envRemoteConfigPathKey))
-		case "etcd":
-			return config.NewConfigWithEtcd(os.Getenv(envRemoteConfigURI), os.Getenv(envRemoteConfigPathKey))
-		default:
-			logging.Errorf("remote config type not supported: %s", remoteConfigType)
-		}
+	if serverConfig != nil {
+		return serverConfig
 	}
-	logging.Infof("remote config is not set, try using local config")
 
 	// look for local config file
 	var path string
