@@ -6,6 +6,7 @@ import (
 
 	_ "embed"
 
+	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/test/api/skema/test"
@@ -17,10 +18,13 @@ import (
 var yamlConfig []byte
 
 func main() {
-	grpcmux.SetServerConfig(string(yamlConfig))
-	grpcSrv := grpcmux.NewServer(
+	// grpcSrv := grpcmux.NewServer(
+	// 	grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2(), Interceptor3()),
+	// )
+	grpcSrv := grpcmux.NewServerWithConfig(config.NewConfigWithString(string(yamlConfig)),
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2(), Interceptor3()),
 	)
+
 	pb.RegisterTestServer(grpcSrv, NewServer())
 
 	// for http gateway only.

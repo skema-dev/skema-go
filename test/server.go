@@ -20,7 +20,10 @@ func NewServer() pb.TestServer {
 }
 
 // Heathcheck
-func (s *rpcTestServer) Heathcheck(ctx context.Context, req *pb.HealthcheckRequest) (rsp *pb.HealthcheckResponse, err error) {
+func (s *rpcTestServer) Heathcheck(
+	ctx context.Context,
+	req *pb.HealthcheckRequest,
+) (rsp *pb.HealthcheckResponse, err error) {
 	// implement business logic here ...
 	// ...
 

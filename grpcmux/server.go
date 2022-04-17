@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	serverConfig      *config.Config
 	configSearchPaths = []string{"./grpc.yaml", "./config/grpc.yaml", "/config/grpc.yaml"}
 )
 
@@ -39,26 +38,24 @@ type grpcServer struct {
 	cancelFunc context.CancelFunc
 }
 
-// SetServerConfig
-// @value: raw string data user defined (in yaml). It could be from localfile or any remote resource
-// returns: None
-func SetServerConfig(value string) {
-	serverConfig = config.NewConfigWithString(value)
+func NewServer(opts ...grpc.ServerOption) *grpcServer {
+	localConfig := LoadLocalConfig()
+	return NewServerWithConfig(localConfig, opts...)
 }
 
 // Add additional setup besides standard grpc.NewServer
-func NewServer(opts ...grpc.ServerOption) *grpcServer {
-	serverConfig = loadConfig()
+func NewServerWithConfig(conf *config.Config, opts ...grpc.ServerOption) *grpcServer {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	port := serverConfig.GetInt("port")
-	httpPort := serverConfig.GetInt("http.port")
+	port := conf.GetInt("port")
+	httpPort := conf.GetInt("http.port")
 	if port == httpPort {
 		logging.Fatalw("http port is the same as grpc port", "grpc port", port, "http port", httpPort)
 	}
 	if port == 0 {
 		logging.Fatalf("please specify port in config")
 	}
+	logging.Infof("service port", "gprc", port, "http", httpPort)
 
 	// connect to grpc port
 	conn, err := grpc.DialContext(
@@ -78,7 +75,7 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 
 	gatewayPathPrefix := "/"
 	if httpPort > 0 {
-		gatewayPathPrefix = serverConfig.GetString("http.gateway.path")
+		gatewayPathPrefix = conf.GetString("http.gateway.path")
 		if gatewayPathPrefix == "" {
 			gatewayPathPrefix = "/"
 		} else {
@@ -89,14 +86,14 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 		logging.Infof("gateway path is set to %s", gatewayPathPrefix)
 	}
 
-	initComponents(serverConfig)
+	initComponents(conf)
 
 	srv := grpc.NewServer(
 		opts...,
 	)
 
 	return &grpcServer{
-		conf:             serverConfig,
+		conf:             conf,
 		server:           srv,
 		httpMux:          http.NewServeMux(),
 		gatewayMux:       serverMux,
@@ -109,12 +106,8 @@ func NewServer(opts ...grpc.ServerOption) *grpcServer {
 	}
 }
 
-// load config either from environment setting (for remote) or from local file
-func loadConfig() *config.Config {
-	if serverConfig != nil {
-		return serverConfig
-	}
-
+// load config from local file
+func LoadLocalConfig() *config.Config {
 	// look for local config file
 	var path string
 	flag.StringVar(&path, "config", "", "path for grpc server config")
