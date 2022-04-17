@@ -12,7 +12,7 @@ type loggingTestSuite struct {
 }
 
 func (s *loggingTestSuite) SetupTest() {
-	logging.Init(logging.DebugLevel, "console")
+	logging.Init("debug", "console")
 }
 
 func (s *loggingTestSuite) TearDownSuite() {

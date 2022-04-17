@@ -1,45 +1,12 @@
-app: test # 必填，应用名
-server: test # 必填，服务名，在server目录中会被替换
-namespace: "{{ $NAMESPACE }}" # 命名空间，可对应北极星的命名空间
 port: 9991 # 必填，端口号，grpc多个service可共用一个端口
-http_port: 9992 # 选填，http端口号，功能与grpc-gateway一致。如果与port端口相同，则可共用端口号。
+http:
+  port: 9992
+  gateway:
+    # path: "/test1/"
+    path: "/"
 
 # 日志
 logging:
-  level: debug # 日志等级，有debug/info/warn/error/fatal
-  enable_method: true # 打印方法名
-  enable_caller: true # 打印调用的文件和行号
-  fields: # 每条日志默认增加的字段
-    Namespace: "{{ $NAMESPACE }}"
-    App: "{{ .app }}"
-    Server: "{{ .server }}"
-    Region: "{{ $REGION }}"
-    IP: "{{ $POD_IP }}"
-  method_log: # 打印接口出入参,blacklist为空表示全集，whitelist-blacklist的差集作为判断开启依据
-    enable: true # 是否开启
-    req_whitelist: ["sayHello"] # 打印请求参数的接口白名单
-    req_blacklist: ["method1", "method2"] # 打印请求参数的接口黑名单
-    rsp_whitelist: ["sayHello"] # 打印返回参数的接口白名单
-    rsp_blacklist: ["method1", "method2"] # 打印返回参数的接口黑名单
-
-  writers: # 日志输出writer，可配置多个，支持console/file
-    file: # 输出到文件
-      time_unit: day # 支持按year/month/day/hour/minute滚动日志文件
-      max_number: 15 # 日志保留的份数
-      max_size_mb: 10000  # 日志最大数量，超过后会自动删除最老的日志文件
-      log_path: "./logs/{{ .server }}/rpc.log" # 日志保存路径
-
-# http相关
-http:
-  gateway:
-    path: "/" # 网关http服务的path
-
-# port: 9991
-# http_port: 9992
-
-# gateway:
-#   path: "/"
-
-# logging:
-#   level: debug
-#   encoding: console
+  level: debug # info | debug
+  encoding: console # console | json
+  output: "./log/default.log"

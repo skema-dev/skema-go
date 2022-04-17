@@ -97,6 +97,11 @@ func (s *configTestSuite) TestValueTypes() {
 	assert.Equal(s.T(), true, sub.GetBool("bool_4"))
 	assert.Equal(s.T(), false, sub.GetBool("bool_5"))
 	assert.Equal(s.T(), "测试Unicode", sub.GetString("unicode_1"))
+
+	assert.Equal(s.T(), 10, sub.GetInt("number_a", 10))
+	assert.Equal(s.T(), "test", sub.GetString("a.b.c", "test"))
+	assert.Equal(s.T(), true, sub.GetBool("a.b.c", true))
+	assert.Equal(s.T(), 2.1414, sub.GetFloat("a.b.c.d", 2.1414))
 }
 
 func (s *configTestSuite) TestUnmarshal() {
