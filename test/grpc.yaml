@@ -4,6 +4,9 @@ http:
   gateway:
     # path: "/test1/"
     path: "/"  # this is the routing prefix if you need. You can force to append an extra path before all standard URLs
+client:
+  address: "localhost:9993"  # for grpc client url and port
+
 
 logging:
   level: debug # info | debug

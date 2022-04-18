@@ -3,6 +3,8 @@ http:
   port: 8882   # for http service
   gateway:
     path: "/test/"
+client:
+  address: "localhost:8883"  # for grpc client url and port
 
 logging:
   level: debug # info | debug
