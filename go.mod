@@ -14,4 +14,8 @@ require (
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gorm.io/driver/mysql v1.3.3
+	gorm.io/driver/postgres v1.3.4
+	gorm.io/driver/sqlite v1.3.1
+	gorm.io/gorm v1.23.4
 )

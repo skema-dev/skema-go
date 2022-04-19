@@ -30,6 +30,13 @@ metadata:
         bool_4: TRUE
         bool_5: FALSE
         unicode_1: "测试Unicode"
+database:
+    db1:
+        type: mysql
+    db2:
+        type: pgsql
+    db3:
+        type: sqlite
 `
 )
 
@@ -122,6 +129,29 @@ func (s *configTestSuite) TestUnmarshal() {
 	assert.Equal(s.T(), "grpc-go/grpc-go-4", metadata.Tpl)
 	assert.Equal(s.T(), "myproject1", metadata.Project.ProjectName)
 	assert.Equal(s.T(), "github", metadata.Project.RepoType)
+}
+
+func (s *configTestSuite) TestKeysMap() {
+	conf := NewConfigWithString(configData)
+
+	result := conf.GetMapConfig("database")
+
+	tests := []struct {
+		key    string
+		expect string
+	}{
+		{key: "db1", expect: "mysql"},
+		{key: "db2", expect: "pgsql"},
+		{key: "db3", expect: "sqlite"},
+	}
+
+	for _, tt := range tests {
+		s.T().Run(tt.key, func(t *testing.T) {
+			conf := result[tt.key]
+			assert.Equal(s.T(), tt.expect, conf.GetString("type"))
+		})
+	}
+
 }
 
 func TestConfigTestSuite(t *testing.T) {
