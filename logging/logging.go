@@ -40,6 +40,7 @@ func Init(level string, encoding string, opts ...string) {
 
 	zapConfig := zap.NewProductionConfig()
 	zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	if outputPath != "" {
 		// clean previous data, regardless it's file or path
