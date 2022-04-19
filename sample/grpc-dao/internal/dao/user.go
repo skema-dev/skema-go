@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"github.com/skema-dev/skema-go/database"
 	"gorm.io/gorm"
 )
 
@@ -15,4 +16,8 @@ type User struct {
 
 func (User) TableName() string {
 	return "user"
+}
+
+func NewUser() database.DaoModel {
+	return &User{}
 }

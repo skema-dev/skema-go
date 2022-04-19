@@ -36,6 +36,10 @@ func (d *DAO) GetDB() *Database {
 	return d.db
 }
 
+func (d *DAO) Name() string {
+	return d.model.TableName()
+}
+
 func (d *DAO) Automigrate() {
 	d.db.AutoMigrate(d.model)
 }

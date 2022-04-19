@@ -6,8 +6,11 @@ import (
 
 	_ "embed"
 
-	"grpc-dao/server"
+	"grpc-dao/cmd/server"
 
+	"grpc-dao/internal/dao"
+
+	"github.com/skema-dev/skema-go/database"
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
@@ -19,6 +22,9 @@ func main() {
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2()),
 	)
+
+	dao := database.Manager().GetDAO("", dao.User{})
+	fmt.Printf("name: %v\n", dao)
 
 	pb.RegisterTestServer(grpcSrv, server.NewServer())
 
