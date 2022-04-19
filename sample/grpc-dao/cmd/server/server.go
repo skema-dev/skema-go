@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 
+	"grpc-dao/internal/dao"
+
+	"github.com/skema-dev/skema-go/database"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
 )
 
@@ -26,12 +30,26 @@ func (s *rpcTestServer) Heathcheck(
 ) (rsp *pb.HealthcheckResponse, err error) {
 	// implement business logic here ...
 	// ...
-
 	log.Printf("Received from Heathcheck request: %v", req)
-	rsp = &pb.HealthcheckResponse{
-		Result: "health check ok",
+
+	result := ""
+
+	user := database.Manager().GetDAO(&dao.User{})
+	err = user.Upsert(dao.User{
+		Name: req.Msg,
+	}, nil, nil)
+
+	if err != nil {
+		result := []dao.User{}
+		user.Query(&database.QueryParams{}, &result)
+		result = fmt.Sprintf("total: %d", len(result))
+	} else {
+		result = err.Error()
 	}
 
+	rsp = &pb.HealthcheckResponse{
+		Result: result,
+	}
 	return rsp, err
 }
 

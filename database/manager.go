@@ -27,6 +27,11 @@ var (
 	dbMan *DatabaseManager
 )
 
+func InitWithConfigFile(filepath string, key string) {
+	conf := config.NewConfigWithFile(filepath)
+	InitWithConfig(conf, key)
+}
+
 func InitWithConfig(conf *config.Config, key string) {
 	dbMan = NewDatabaseManager().WithConfig(conf, key)
 }
@@ -57,6 +62,10 @@ func (d *DatabaseManager) WithConfig(conf *config.Config, key string) *DatabaseM
 }
 
 func (d *DatabaseManager) AddDatabaseWithConfig(conf *config.Config, dbKey string) {
+	if dbKey == "" {
+		logging.Fatalf("AddDatabaseWithConfig must specify a key for the db!")
+	}
+
 	dbtype := conf.GetString("type")
 	dbtype = strings.ToLower(dbtype)
 	createFn, ok := dbCreateMap[dbtype]
@@ -73,6 +82,18 @@ func (d *DatabaseManager) AddDatabaseWithConfig(conf *config.Config, dbKey strin
 }
 
 func (d DatabaseManager) GetDB(dbKey string) *Database {
+	if dbKey == "" {
+		// no key specified, return the db if there is only one, otherwise fatal exit
+		if len(d.databases) > 1 {
+			logging.Fatalf("more than 1 database defined. Please specify the exact db with a key")
+		}
+
+		for _, v := range d.databases {
+			logging.Debugf("no database key specified, return the default db")
+			return v
+		}
+	}
+
 	db, ok := d.databases[dbKey]
 	if !ok {
 		logging.Errorf("cannot find database with key %s", dbKey)
@@ -82,19 +103,30 @@ func (d DatabaseManager) GetDB(dbKey string) *Database {
 	return db
 }
 
-func (d *DatabaseManager) RegisterDaoModels(dbKey string, models []DaoModel) {
+// register dao models for the default database
+func (d *DatabaseManager) RegisterDaoModels(models []DaoModel) {
+	d.RegisterDaoModelsForDb("", models)
+}
+
+// register dao models for the specified database
+func (d *DatabaseManager) RegisterDaoModelsForDb(dbKey string, models []DaoModel) {
 	for _, model := range models {
-		d.RegisterDAO(dbKey, model)
+		d.RegisterDaoForDb(dbKey, model)
 	}
 }
 
-func (d *DatabaseManager) RegisterDAO(dbKey string, model DaoModel) {
+func (d *DatabaseManager) RegisterDao(model DaoModel) {
+	d.RegisterDaoForDb("", model)
+}
+
+// register A dao model for the specified database
+func (d *DatabaseManager) RegisterDaoForDb(dbKey string, model DaoModel) {
 	db := d.GetDB(dbKey)
 	if db == nil {
 		logging.Fatalf("incorrect dbKey when init dao in db manager: %s", dbKey)
 	}
 
-	daoKey := d.GetDaoKey(dbKey, model)
+	daoKey := d.getDaoKey(dbKey, model)
 	newDao := &DAO{db: db, model: model}
 
 	if _, loaded := d.daoMap.LoadOrStore(daoKey, newDao); loaded {
@@ -109,8 +141,12 @@ func (d *DatabaseManager) RegisterDAO(dbKey string, model DaoModel) {
 	}
 }
 
-func (d DatabaseManager) GetDAO(dbKey string, model DaoModel) *DAO {
-	daoKey := d.GetDaoKey(dbKey, model)
+func (d DatabaseManager) GetDAO(model DaoModel) *DAO {
+	return d.GetDaoForDb("", model)
+}
+
+func (d DatabaseManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
+	daoKey := d.getDaoKey(dbKey, model)
 	v, ok := d.daoMap.Load(daoKey)
 	if !ok {
 		logging.Fatalf("dao not initialized for %s", daoKey)
@@ -118,6 +154,11 @@ func (d DatabaseManager) GetDAO(dbKey string, model DaoModel) *DAO {
 	return v.(*DAO)
 }
 
-func (d DatabaseManager) GetDaoKey(dbKey string, model DaoModel) string {
-	return dbKey + "." + model.TableName()
+func (d DatabaseManager) getDaoKey(dbKey string, model DaoModel) string {
+	key := "default"
+	if dbKey != "" {
+		key = dbKey
+	}
+
+	return key + "." + model.TableName()
 }

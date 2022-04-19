@@ -19,12 +19,12 @@ import (
 )
 
 func main() {
+	database.InitWithConfigFile("./config/database.yaml", "database")
+	dao.Register()
+
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2()),
 	)
-
-	dao := database.Manager().GetDAO("", dao.User{})
-	fmt.Printf("name: %v\n", dao)
 
 	pb.RegisterTestServer(grpcSrv, server.NewServer())
 

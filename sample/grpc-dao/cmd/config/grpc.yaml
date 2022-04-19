@@ -9,10 +9,3 @@ logging:
   level: debug # info | debug
   encoding: console # console | json
   output: "./log/default.log"
-
-database:
-  db1:
-     type: sqlite
-     filepath: default.db
-     automigrate: true
-    

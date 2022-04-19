@@ -17,5 +17,5 @@ type Address struct {
 }
 
 func (Address) TableName() string {
-	return "paycheck"
+	return "address"
 }

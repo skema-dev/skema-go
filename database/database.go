@@ -79,7 +79,6 @@ func NewSqliteDatabase(conf *config.Config) (*Database, error) {
 		return nil, err
 	}
 
-	fmt.Printf("sqlite automigrate: %t\n", conf.GetBool("automigrate"))
 	return &Database{
 		DB:          *db,
 		automigrate: conf.GetBool("automigrate", true),
