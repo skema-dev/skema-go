@@ -1,5 +1,11 @@
 # Skema-Go
-Skema-Go is a Golang framework to simplify gRPC development by integrating various opensource components for best practice.
+Skema-Go is a Golang framework to simplify gRPC development by integrating various opensource components for best practice.  
+
+## Highlight Features  
+- grpcmux: grpc + http in an easy way, you can build one in less than 10 lines as below!
+- database: build-in CRUD capabilities for automatic DAO(Data Access Object) generating and registration. You no long need to struggling with database! Checkout [grpc-dao sample](https://github.com/skema-dev/skema-go/tree/main/sample/grpc-dao)
+- Feature Rich Configuration support
+
 
 ## grpcmux: gRPC + http service in 10 lines
 Talk is cheap. First, let's see how we can create a grpc server with http enabled in just 10 lines.
