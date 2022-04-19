@@ -98,3 +98,25 @@ func (c *Config) GetStringArray(key string) []string {
 func (c *Config) GetIntArray(key string) []int {
 	return c.viperData.GetIntSlice(key)
 }
+
+// For config as below:
+// keys:
+//   key1:
+//       value: xxxxxx
+//   key2:
+//       value: xxxxxx
+//
+// we start with the parent key "keys", and locate the subkey "key1" "key2"...,
+// then concatenate to uset the fullpath to get the sub config
+func (c *Config) GetMapConfig(key string) map[string]Config {
+	result := map[string]Config{}
+	values := c.viperData.Get(key).(map[string]interface{})
+
+	for k := range values {
+		path := key + "." + k
+		conf := c.GetSubConfig(path)
+		result[k] = *conf
+	}
+
+	return result
+}
