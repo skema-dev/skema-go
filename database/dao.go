@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/skema-dev/skema-go/logging"
 	"gorm.io/gorm"
@@ -28,29 +27,17 @@ type DAO struct {
 	model DaoModel
 }
 
-var (
-	daoMap = sync.Map{}
-)
-
-func NewDAO(db *Database, model DaoModel, automigrate bool) *DAO {
-	newDao := &DAO{db: db, model: model}
-
-	if dao, loaded := daoMap.LoadOrStore(model.TableName(), newDao); loaded {
-		// dao already created, just return the existing one
-		return dao.(*DAO)
-	}
-
-	// now initialize the table if necessary
-	if automigrate {
-		db.AutoMigrate(model)
-	}
-
-	return newDao
+func NewDAO(db *Database, model DaoModel) *DAO {
+	return &DAO{db: db, model: model}
 }
 
 // return the raw gorm.DB when necessary, so user can perform whatever the standard gorm can do.
 func (d *DAO) GetDB() *Database {
 	return d.db
+}
+
+func (d *DAO) Automigrate() {
+	d.db.AutoMigrate(d.model)
 }
 
 // Update if exists (by queryColumns), insert new one if not existing

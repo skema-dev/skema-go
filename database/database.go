@@ -15,6 +15,11 @@ import (
 // wrap standard gorm.DB. For now, it's not doing much.
 type Database struct {
 	gorm.DB
+	automigrate bool
+}
+
+func (d Database) ShouldAutomigrate() bool {
+	return d.automigrate
 }
 
 // initiate mysql db and return the instance
@@ -43,18 +48,23 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 	}
 	logging.Debugf("connectedto %s", dsn)
 
-	return &Database{DB: *db}, nil
+	return &Database{
+		DB:          *db,
+		automigrate: conf.GetBool("automigrate", true),
+	}, nil
 }
 
 // initiate a sqlite db  for in-memeory implementing, and return the instance
 func NewMemoryDatabase(conf *config.Config) (*Database, error) {
 	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-
 	if err != nil {
 		return nil, err
 	}
 
-	return &Database{DB: *db}, nil
+	return &Database{
+		DB:          *db,
+		automigrate: true,
+	}, nil
 }
 
 // initiate sqlite db and return the instance
@@ -69,7 +79,11 @@ func NewSqliteDatabase(conf *config.Config) (*Database, error) {
 		return nil, err
 	}
 
-	return &Database{DB: *db}, nil
+	fmt.Printf("sqlite automigrate: %t\n", conf.GetBool("automigrate"))
+	return &Database{
+		DB:          *db,
+		automigrate: conf.GetBool("automigrate", true),
+	}, nil
 }
 
 // initiate postgresql db and return the instance
@@ -103,5 +117,8 @@ func NewPostsqlDatabase(conf *config.Config) (*Database, error) {
 	}
 	logging.Debugf("connectedto %s", dsn)
 
-	return &Database{DB: *db}, nil
+	return &Database{
+		DB:          *db,
+		automigrate: conf.GetBool("automigrate", true),
+	}, nil
 }
