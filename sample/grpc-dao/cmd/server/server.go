@@ -9,6 +9,8 @@ import (
 
 	"github.com/skema-dev/skema-go/database"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
+
+	"github.com/google/uuid"
 )
 
 type rpcTestServer struct {
@@ -35,14 +37,15 @@ func (s *rpcTestServer) Heathcheck(
 	result := ""
 
 	user := database.Manager().GetDAO(&dao.User{})
-	err = user.Upsert(dao.User{
+	err = user.Upsert(&dao.User{
+		UUID: uuid.New().String(),
 		Name: req.Msg,
 	}, nil, nil)
 
-	if err != nil {
-		result := []dao.User{}
-		user.Query(&database.QueryParams{}, &result)
-		result = fmt.Sprintf("total: %d", len(result))
+	if err == nil {
+		rs := []dao.User{}
+		user.Query(&database.QueryParams{}, &rs)
+		result = fmt.Sprintf("total: %d", len(rs))
 	} else {
 		result = err.Error()
 	}

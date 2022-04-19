@@ -5,5 +5,9 @@ import (
 )
 
 func Register() {
-	database.Manager().RegisterDaoModels([]database.DaoModel{User{}, Paycheck{}, Address{}})
+	database.Manager().RegisterDaoModels([]database.DaoModel{
+		User{},
+		Paycheck{},
+		Address{},
+	})
 }
