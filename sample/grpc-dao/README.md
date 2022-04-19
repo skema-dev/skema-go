@@ -1,6 +1,6 @@
 # GRPC + DAO Support
 
-In this example, we demonstrated how the build-in DAO support could simplify the repetitive struggling with database CRUD.  
+In this example, we demonstrated how the build-in DAO(Data Access Object, not DAO for web 3.0) support could simplify the repetitive struggling with database CRUD.  
 
 Developers spend most of their lives messing around with mysql/orm and all kinds of ORM packages. In order to perform CRUD, they usually have to do the following:  
 - Define a struct/class/whatever model
@@ -8,7 +8,7 @@ Developers spend most of their lives messing around with mysql/orm and all kinds
 - Although we just need CRUD, most ORM tools offer quite a lot flexible methods to query/create, and "smart" solution for Upsert/Soft Delete/etc., which makes the APIs confusing.    
 - Developers have to wrap those ORM tools again and again to consolidate to "reusabel" interfaces, if they are really good enough to do that...  
 
-What I like most is the way how Djano does in its model. They have build-in CRUD functionalities. And I'd like to bring similiar features to Skema-Go, as below code:
+What I like most is the way how Djano does in its model. They have build-in CRUD functionalities. And I'd like to bring similiar features to Skema-Go, as shown in below code:
 
 ```
 	user := database.Manager().GetDAO(&dao.User{})
@@ -31,7 +31,7 @@ Let's go through the code line by line:
 ```
 	user := database.Manager().GetDAO(&dao.User{})
 ```
-First, we do NOT design or create a DAO by ourselves, we *Fetch* an DAO object from a database manager. The manager in fact register all DAOs for tables/models you designed, so you can just fetch from the registry, instead create a new one. By this way, we can avoid many repetitive actions when building a DAO object.  
+First, we do NOT design or create a DAO by ourselves, we *Fetch* a DAO object from a database manager. The manager in fact register all DAOs for tables/models you designed, so you can just fetch from the registry, instead create a new one. By this way, we can avoid many repetitive actions when building a DAO object.  
 
 ```
 err = user.Upsert(&dao.User{
