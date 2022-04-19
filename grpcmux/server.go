@@ -55,7 +55,7 @@ func NewServerWithConfig(conf *config.Config, opts ...grpc.ServerOption) *grpcSe
 	if port == 0 {
 		logging.Fatalf("please specify port in config")
 	}
-	logging.Infof("service port", "gprc", port, "http", httpPort)
+	logging.Infow("service port", "gprc", port, "http", httpPort)
 
 	// connect to grpc port
 	conn, err := grpc.DialContext(
