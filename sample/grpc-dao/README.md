@@ -1,6 +1,6 @@
 # GRPC + DAO Support
 
-In this example, we demonstrated the usage of build-in DAO support could simplify the repetitive struggling with database CRUD.  
+In this example, we demonstrated how the build-in DAO support could simplify the repetitive struggling with database CRUD.  
 
 Developers spend most of their lives messing around with mysql/orm and all kinds of ORM packages. In order to perform CRUD, they usually have to do the following:  
 - Define a struct/class/whatever model
