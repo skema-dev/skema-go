@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	pb "github.com/skema-dev/skema-go/test/api/skema/test"
+	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
 )
 
 type rpcTestServer struct {

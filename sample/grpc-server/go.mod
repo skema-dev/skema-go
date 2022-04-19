@@ -1,0 +1,1 @@
+module github.com/skema-dev/skema-go/sample/grpc-server

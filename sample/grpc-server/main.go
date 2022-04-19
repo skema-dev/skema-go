@@ -9,7 +9,7 @@ import (
 	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
-	pb "github.com/skema-dev/skema-go/test/api/skema/test"
+	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
