@@ -25,7 +25,15 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 	port := conf.GetInt("port")
 	dbname := conf.GetString("dbname")
 	charset := conf.GetString("charset", "utf8mb4")
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local", username, password, host, port, dbname, charset)
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
+		username,
+		password,
+		host,
+		port,
+		dbname,
+		charset,
+	)
 
 	logging.Debugf("connecting to %s", dsn)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -73,7 +81,15 @@ func NewPostsqlDatabase(conf *config.Config) (*Database, error) {
 	dbname := conf.GetString("dbname")
 	timezone := conf.GetString("timezone", "Asia/Shanghai")
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s", host, username, password, dbname, port, timezone)
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
+		host,
+		username,
+		password,
+		dbname,
+		port,
+		timezone,
+	)
 	options := conf.GetString("options")
 	if len(options) > 0 {
 		dsn += "options=" + options

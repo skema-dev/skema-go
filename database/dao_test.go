@@ -58,7 +58,11 @@ func (s *daoTestSuite) testSampleDAO() {
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), 2, len(results))
 
-	err = dao.Upsert(&SampleModel{Name: "user2", Sex: "female", Nation: "japan", City: "tokyo"}, []string{"name", "sex"}, []string{"nation"})
+	err = dao.Upsert(
+		&SampleModel{Name: "user2", Sex: "female", Nation: "japan", City: "tokyo"},
+		[]string{"name", "sex"},
+		[]string{"nation"},
+	)
 	assert.Nil(s.T(), err)
 
 	err = dao.Query(&db.QueryParams{"name": "user2"}, &results)
@@ -67,7 +71,11 @@ func (s *daoTestSuite) testSampleDAO() {
 	assert.Equal(s.T(), "japan", results[0].Nation)
 	assert.Equal(s.T(), "london", results[0].City)
 
-	err = dao.Upsert(&SampleModel{Name: "user2", Sex: "female", Nation: "usa", City: "san francisco"}, []string{"name", "sex"}, []string{"nation", "city"})
+	err = dao.Upsert(
+		&SampleModel{Name: "user2", Sex: "female", Nation: "usa", City: "san francisco"},
+		[]string{"name", "sex"},
+		[]string{"nation", "city"},
+	)
 	assert.Nil(s.T(), err)
 
 	err = dao.Query(&db.QueryParams{"name": "user2"}, &results)
