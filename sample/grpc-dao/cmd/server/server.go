@@ -49,7 +49,7 @@ func (s *rpcTestServer) Heathcheck(
 		result = fmt.Sprintf("total: %d", len(rs))
 
 		if len(rs) > 3 {
-			err = user.BatchDelete("name like 'user'")
+			err = user.Delete("name like 'user%'")
 			if err != nil {
 				logging.Errorf(err.Error())
 			}
