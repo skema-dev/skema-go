@@ -1,0 +1,6 @@
+database:
+  db1:
+     type: sqlite
+     filepath: default.db
+     automigrate: true
+    

@@ -36,7 +36,8 @@ func (s *daoTestSuite) TestDAOInSequence() {
 
 func (s *daoTestSuite) testSampleDAO() {
 	dbInstance, _ := db.NewMemoryDatabase(nil)
-	dao := db.NewDAO(dbInstance, &SampleModel{}, true)
+	dao := db.NewDAO(dbInstance, &SampleModel{})
+	dao.Automigrate()
 	assert.NotNil(s.T(), dao)
 
 	dao.Upsert(&SampleModel{Name: "user1", Sex: "male", Nation: "china", City: "shanghai"}, nil, nil)
@@ -87,7 +88,8 @@ func (s *daoTestSuite) testSampleDAO() {
 
 func (s *daoTestSuite) testDeleteDAO() {
 	dbInstance, _ := db.NewMemoryDatabase(nil)
-	dao := db.NewDAO(dbInstance, &SampleModel{}, true)
+	dao := db.NewDAO(dbInstance, &SampleModel{})
+	dao.Automigrate()
 	assert.NotNil(s.T(), dao)
 
 	dao.Upsert(&SampleModel{Name: "user1", Sex: "male", Nation: "china", City: "shanghai"}, nil, nil)
