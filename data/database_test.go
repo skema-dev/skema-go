@@ -1,10 +1,10 @@
-package database_test
+package data_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -25,7 +25,7 @@ func (s *databaseTestSuite) SetupTest() {
 }
 
 func (s *databaseTestSuite) TestMemoryDb() {
-	db, err := database.NewMemoryDatabase(nil)
+	db, err := data.NewMemoryDatabase(nil)
 	db.AutoMigrate(&Sample{})
 
 	assert.NotNil(s.T(), db)

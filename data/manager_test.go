@@ -1,11 +1,11 @@
-package database_test
+package data_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/skema-dev/skema-go/config"
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -78,7 +78,7 @@ func (s *managerTestSuite) testAddDbFromConfig() {
 	dbConfig := config.NewConfigWithString(testConfig1)
 	configs := dbConfig.GetMapConfig("database")
 
-	dbManager := database.NewDatabaseManager()
+	dbManager := data.NewDataManager()
 
 	for k, v := range configs {
 		dbManager.AddDatabaseWithConfig(&v, k)
@@ -94,7 +94,7 @@ func (s *managerTestSuite) testCreatSqlitefileFromConfig() {
 	os.RemoveAll("hello4.db")
 
 	dbConfig := config.NewConfigWithString(testConfig2)
-	dbManager := database.NewDatabaseManager().WithConfig(dbConfig, "database")
+	dbManager := data.NewDataManager().WithConfig(dbConfig, "database")
 
 	db1 := dbManager.GetDB("db1")
 	db2 := dbManager.GetDB("db2")
@@ -111,11 +111,11 @@ func (s *managerTestSuite) testCreatDAO() {
 	os.RemoveAll("hello4.db")
 
 	dbConfig := config.NewConfigWithString(testConfig2)
-	database.InitWithConfig(dbConfig, "database")
+	data.InitWithConfig(dbConfig, "database")
 
-	database.Manager().RegisterDaoModelsForDb("db2", []database.DaoModel{TestModel1{}, TestModel2{}})
+	data.Manager().RegisterDaoModelsForDb("db2", []data.DaoModel{TestModel1{}, TestModel2{}})
 
-	dao := database.Manager().GetDaoForDb("db2", TestModel1{})
+	dao := data.Manager().GetDaoForDb("db2", TestModel1{})
 	dao.Upsert(&TestModel1{
 		Name: "test1",
 	}, nil, nil)
@@ -124,7 +124,7 @@ func (s *managerTestSuite) testCreatDAO() {
 	}, nil, nil)
 
 	result := []TestModel1{}
-	dao.Query(&database.QueryParams{}, &result)
+	dao.Query(&data.QueryParams{}, &result)
 	assert.Equal(s.T(), 2, len(result))
 
 	os.RemoveAll("hello4.db")

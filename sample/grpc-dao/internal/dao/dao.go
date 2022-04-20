@@ -1,11 +1,11 @@
 package dao
 
 import (
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
 )
 
 func Register() {
-	database.Manager().RegisterDaoModels([]database.DaoModel{
+	data.Manager().RegisterDaoModels([]data.DaoModel{
 		User{},
 		Paycheck{},
 		Address{},

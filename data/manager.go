@@ -1,7 +1,6 @@
-package database
+package data
 
 import (
-	"reflect"
 	"strings"
 	"sync"
 
@@ -9,11 +8,10 @@ import (
 	"github.com/skema-dev/skema-go/logging"
 )
 
-// DatabaseManager provides simple interface to loop up a db instance
-type DatabaseManager struct {
+// DataManager provides simple interface to loop up a db instance/dao/etc.
+type DataManager struct {
 	databases map[string]*Database
 	daoMap    sync.Map
-	daoTypes  map[string]reflect.Type
 }
 
 var (
@@ -24,7 +22,7 @@ var (
 		"pgsql":  NewPostsqlDatabase,
 	}
 
-	dbMan *DatabaseManager
+	dataMan *DataManager
 )
 
 func InitWithConfigFile(filepath string, key string) {
@@ -33,22 +31,22 @@ func InitWithConfigFile(filepath string, key string) {
 }
 
 func InitWithConfig(conf *config.Config, key string) {
-	dbMan = NewDatabaseManager().WithConfig(conf, key)
+	dataMan = NewDataManager().WithConfig(conf, key)
 }
 
-func Manager() *DatabaseManager {
-	return dbMan
+func Manager() *DataManager {
+	return dataMan
 }
 
-func NewDatabaseManager() *DatabaseManager {
-	man := &DatabaseManager{
+func NewDataManager() *DataManager {
+	man := &DataManager{
 		databases: map[string]*Database{},
 		daoMap:    sync.Map{},
 	}
 	return man
 }
 
-func (d *DatabaseManager) WithConfig(conf *config.Config, key string) *DatabaseManager {
+func (d *DataManager) WithConfig(conf *config.Config, key string) *DataManager {
 	if conf == nil {
 		return d
 	}
@@ -61,7 +59,7 @@ func (d *DatabaseManager) WithConfig(conf *config.Config, key string) *DatabaseM
 	return d
 }
 
-func (d *DatabaseManager) AddDatabaseWithConfig(conf *config.Config, dbKey string) {
+func (d *DataManager) AddDatabaseWithConfig(conf *config.Config, dbKey string) {
 	if dbKey == "" {
 		logging.Fatalf("AddDatabaseWithConfig must specify a key for the db!")
 	}
@@ -81,7 +79,7 @@ func (d *DatabaseManager) AddDatabaseWithConfig(conf *config.Config, dbKey strin
 	d.databases[dbKey] = db
 }
 
-func (d DatabaseManager) GetDB(dbKey string) *Database {
+func (d DataManager) GetDB(dbKey string) *Database {
 	if dbKey == "" {
 		// no key specified, return the db if there is only one, otherwise fatal exit
 		if len(d.databases) > 1 {
@@ -104,23 +102,23 @@ func (d DatabaseManager) GetDB(dbKey string) *Database {
 }
 
 // register dao models for the default database
-func (d *DatabaseManager) RegisterDaoModels(models []DaoModel) {
+func (d *DataManager) RegisterDaoModels(models []DaoModel) {
 	d.RegisterDaoModelsForDb("", models)
 }
 
 // register dao models for the specified database
-func (d *DatabaseManager) RegisterDaoModelsForDb(dbKey string, models []DaoModel) {
+func (d *DataManager) RegisterDaoModelsForDb(dbKey string, models []DaoModel) {
 	for _, model := range models {
 		d.RegisterDaoForDb(dbKey, model)
 	}
 }
 
-func (d *DatabaseManager) RegisterDao(model DaoModel) {
+func (d *DataManager) RegisterDao(model DaoModel) {
 	d.RegisterDaoForDb("", model)
 }
 
 // register A dao model for the specified database
-func (d *DatabaseManager) RegisterDaoForDb(dbKey string, model DaoModel) {
+func (d *DataManager) RegisterDaoForDb(dbKey string, model DaoModel) {
 	db := d.GetDB(dbKey)
 	if db == nil {
 		logging.Fatalf("incorrect dbKey when init dao in db manager: %s", dbKey)
@@ -141,11 +139,11 @@ func (d *DatabaseManager) RegisterDaoForDb(dbKey string, model DaoModel) {
 	}
 }
 
-func (d DatabaseManager) GetDAO(model DaoModel) *DAO {
+func (d DataManager) GetDAO(model DaoModel) *DAO {
 	return d.GetDaoForDb("", model)
 }
 
-func (d DatabaseManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
+func (d DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 	daoKey := d.getDaoKey(dbKey, model)
 	v, ok := d.daoMap.Load(daoKey)
 	if !ok {
@@ -154,7 +152,7 @@ func (d DatabaseManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 	return v.(*DAO)
 }
 
-func (d DatabaseManager) getDaoKey(dbKey string, model DaoModel) string {
+func (d DataManager) getDaoKey(dbKey string, model DaoModel) string {
 	key := "default"
 	if dbKey != "" {
 		key = dbKey

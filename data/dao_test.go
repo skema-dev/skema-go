@@ -1,9 +1,9 @@
-package database_test
+package data_test
 
 import (
 	"testing"
 
-	db "github.com/skema-dev/skema-go/database"
+	db "github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
