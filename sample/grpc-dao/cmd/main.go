@@ -10,7 +10,7 @@ import (
 
 	"grpc-dao/internal/dao"
 
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	database.InitWithConfigFile("./config/database.yaml", "database")
+	data.InitWithConfigFile("./config/database.yaml", "database")
 	dao.Register()
 
 	grpcSrv := grpcmux.NewServer(
