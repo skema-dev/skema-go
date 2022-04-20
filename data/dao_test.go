@@ -114,7 +114,7 @@ filepath: './test.db'
 	dao.Query(&db.QueryParams{}, &samples)
 	assert.Equal(s.T(), 3, len(samples))
 
-	err := dao.BatchDelete("name like 'user%'")
+	err := dao.Delete("name like 'user%'")
 	assert.Nil(s.T(), err)
 	dao.Query(&db.QueryParams{}, &samples)
 	assert.Equal(s.T(), 0, len(samples))

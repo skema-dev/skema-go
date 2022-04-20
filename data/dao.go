@@ -85,10 +85,10 @@ func (d *DAO) Query(
 	var tx *gorm.DB
 
 	if len(options) == 0 {
-		tx = d.db.Model(d.model).Where(*query).Find(result)
+		tx = d.db.Model(&d.model).Where(*query).Find(result)
 	} else {
 		option := options[0]
-		tx = d.db.Model(d.model).Where(*query)
+		tx = d.db.Model(&d.model).Where(*query)
 		if len(option.Order) > 0 {
 			tx = tx.Order(option.Order)
 		}
@@ -114,14 +114,6 @@ func (d *DAO) Query(
 }
 
 func (d *DAO) Delete(conds ...interface{}) error {
-	tx := d.db.Delete(d.model, conds...)
-	return tx.Error
-}
-
-func (d *DAO) BatchDelete(condition string) error {
-	tx := d.db.Where(condition).Delete(d.model)
-	if tx.Error != nil {
-		logging.Errorw(tx.Error.Error(), "condition", condition, "modelname", d.model.TableName())
-	}
+	tx := d.db.Delete(&d.model, conds...)
 	return tx.Error
 }
