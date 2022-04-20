@@ -1,4 +1,4 @@
-package dao
+package model
 
 import (
 	"github.com/skema-dev/skema-go/data"
