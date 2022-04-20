@@ -120,5 +120,8 @@ func (d *DAO) Delete(conds ...interface{}) error {
 
 func (d *DAO) BatchDelete(condition string) error {
 	tx := d.db.Where(condition).Delete(d.model)
+	if tx.Error != nil {
+		logging.Errorw(tx.Error.Error(), "condition", condition, "modelname", d.model.TableName())
+	}
 	return tx.Error
 }

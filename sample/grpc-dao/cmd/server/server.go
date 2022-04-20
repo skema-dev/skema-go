@@ -8,6 +8,7 @@ import (
 	"grpc-dao/internal/model"
 
 	"github.com/skema-dev/skema-go/data"
+	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
 
 	"github.com/google/uuid"
@@ -46,6 +47,14 @@ func (s *rpcTestServer) Heathcheck(
 		rs := []model.User{}
 		user.Query(&data.QueryParams{}, &rs)
 		result = fmt.Sprintf("total: %d", len(rs))
+
+		if len(rs) > 3 {
+			err = user.BatchDelete("name like 'user'")
+			if err != nil {
+				logging.Errorf(err.Error())
+			}
+		}
+
 	} else {
 		result = err.Error()
 	}

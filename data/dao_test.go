@@ -1,8 +1,10 @@
 package data_test
 
 import (
+	"os"
 	"testing"
 
+	"github.com/skema-dev/skema-go/config"
 	db "github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -87,7 +89,11 @@ func (s *daoTestSuite) testSampleDAO() {
 }
 
 func (s *daoTestSuite) testDeleteDAO() {
-	dbInstance, _ := db.NewMemoryDatabase(nil)
+	yaml := `
+type: sqlite
+filepath: './test.db'
+`
+	dbInstance, _ := db.NewSqliteDatabase(config.NewConfigWithString(yaml))
 	dao := db.NewDAO(dbInstance, &SampleModel{})
 	dao.Automigrate()
 	assert.NotNil(s.T(), dao)
@@ -108,9 +114,12 @@ func (s *daoTestSuite) testDeleteDAO() {
 	dao.Query(&db.QueryParams{}, &samples)
 	assert.Equal(s.T(), 3, len(samples))
 
-	dao.BatchDelete("name like 'user%'")
+	err := dao.BatchDelete("name like 'user%'")
+	assert.Nil(s.T(), err)
 	dao.Query(&db.QueryParams{}, &samples)
 	assert.Equal(s.T(), 0, len(samples))
+
+	os.RemoveAll("./test.db")
 }
 
 func TestDaoTestSuite(t *testing.T) {
