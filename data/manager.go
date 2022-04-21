@@ -101,24 +101,12 @@ func (d DataManager) GetDB(dbKey string) *Database {
 	return db
 }
 
-// register dao models for the default database
-func (d *DataManager) RegisterDaoModels(models []DaoModel) {
-	d.RegisterDaoModelsForDb("", models)
-}
-
-// register dao models for the specified database
-func (d *DataManager) RegisterDaoModelsForDb(dbKey string, models []DaoModel) {
-	for _, model := range models {
-		d.RegisterDaoForDb(dbKey, model)
-	}
-}
-
-func (d *DataManager) RegisterDao(model DaoModel) {
-	d.RegisterDaoForDb("", model)
+func (d *DataManager) GetDao(model DaoModel) *DAO {
+	return d.GetDaoForDb("", model)
 }
 
 // register A dao model for the specified database
-func (d *DataManager) RegisterDaoForDb(dbKey string, model DaoModel) {
+func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 	db := d.GetDB(dbKey)
 	if db == nil {
 		logging.Fatalf("incorrect dbKey when init dao in db manager: %s", dbKey)
@@ -127,28 +115,18 @@ func (d *DataManager) RegisterDaoForDb(dbKey string, model DaoModel) {
 	daoKey := d.getDaoKey(dbKey, model)
 	newDao := &DAO{db: db, model: model}
 
-	if _, loaded := d.daoMap.LoadOrStore(daoKey, newDao); loaded {
+	v, loaded := d.daoMap.LoadOrStore(daoKey, newDao)
+	if loaded {
 		// dao already created, just return the existing one
 		logging.Debugf("dao alreay exists: %s", daoKey)
-		return
+		return v.(*DAO)
 	}
 
 	// now initialize the table if necessary
 	if db.ShouldAutomigrate() {
 		db.AutoMigrate(model)
 	}
-}
 
-func (d DataManager) GetDAO(model DaoModel) *DAO {
-	return d.GetDaoForDb("", model)
-}
-
-func (d DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
-	daoKey := d.getDaoKey(dbKey, model)
-	v, ok := d.daoMap.Load(daoKey)
-	if !ok {
-		logging.Fatalf("dao not initialized for %s", daoKey)
-	}
 	return v.(*DAO)
 }
 
