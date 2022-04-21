@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"grpc-dao/internal/dao"
+	"grpc-dao/internal/model"
 
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
+	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
 
 	"github.com/google/uuid"
@@ -36,16 +37,24 @@ func (s *rpcTestServer) Heathcheck(
 
 	result := ""
 
-	user := database.Manager().GetDAO(&dao.User{})
-	err = user.Upsert(&dao.User{
+	user := data.Manager().GetDAO(&model.User{})
+	err = user.Upsert(&model.User{
 		UUID: uuid.New().String(),
 		Name: req.Msg,
 	}, nil, nil)
 
 	if err == nil {
-		rs := []dao.User{}
-		user.Query(&database.QueryParams{}, &rs)
+		rs := []model.User{}
+		user.Query(&data.QueryParams{}, &rs)
 		result = fmt.Sprintf("total: %d", len(rs))
+
+		if len(rs) > 3 {
+			err = user.Delete("name like 'user%'")
+			if err != nil {
+				logging.Errorf(err.Error())
+			}
+		}
+
 	} else {
 		result = err.Error()
 	}

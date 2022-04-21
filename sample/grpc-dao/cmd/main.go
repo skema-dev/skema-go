@@ -8,9 +8,9 @@ import (
 
 	"grpc-dao/cmd/server"
 
-	"grpc-dao/internal/dao"
+	"grpc-dao/internal/model"
 
-	"github.com/skema-dev/skema-go/database"
+	"github.com/skema-dev/skema-go/data"
 	"github.com/skema-dev/skema-go/grpcmux"
 	"github.com/skema-dev/skema-go/logging"
 	pb "github.com/skema-dev/skema-go/sample/api/skema/test"
@@ -19,8 +19,8 @@ import (
 )
 
 func main() {
-	database.InitWithConfigFile("./config/database.yaml", "database")
-	dao.Register()
+	data.InitWithConfigFile("./config/database.yaml", "database")
+	model.Register()
 
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2()),

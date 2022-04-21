@@ -11,7 +11,7 @@ Developers spend most of their lives messing around with mysql/orm and all kinds
 What I like most is the way how Djano does in its model. They have build-in CRUD functionalities. And I'd like to bring similiar features to Skema-Go, as shown in below code:
 
 ```
-	user := database.Manager().GetDAO(&dao.User{})
+	user := data.Manager().GetDAO(&dao.User{})
 	err = user.Upsert(&dao.User{
 		UUID: uuid.New().String(),
 		Name: req.Msg,
@@ -19,7 +19,7 @@ What I like most is the way how Djano does in its model. They have build-in CRUD
 
 	if err == nil {
 		rs := []dao.User{}
-		user.Query(&database.QueryParams{}, &rs)
+		user.Query(&data.QueryParams{}, &rs)
 		result = fmt.Sprintf("total: %d", len(rs))
 	} else {
 		result = err.Error()
@@ -44,7 +44,7 @@ After we get the user DAO, we can call Upsert() function to create/update the re
 ```
 	if err == nil {
 		rs := []dao.User{}
-		user.Query(&database.QueryParams{}, &rs)
+		user.Query(&data.QueryParams{}, &rs)
 		result = fmt.Sprintf("total: %d", len(rs))
 	} else {
 		result = err.Error()
