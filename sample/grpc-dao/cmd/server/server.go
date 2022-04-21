@@ -37,7 +37,7 @@ func (s *rpcTestServer) Heathcheck(
 
 	result := ""
 
-	user := data.Manager().GetDAO(&model.User{})
+	user := data.Manager().GetDao(&model.User{})
 	err = user.Upsert(&model.User{
 		UUID: uuid.New().String(),
 		Name: req.Msg,

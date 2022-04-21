@@ -101,7 +101,7 @@ func (d DataManager) GetDB(dbKey string) *Database {
 	return db
 }
 
-func (d *DataManager) GetDao(model DaoModel) *DAO {
+func (d *DataManager) GetDAO(model DaoModel) *DAO {
 	return d.GetDaoForDb("", model)
 }
 
@@ -117,10 +117,9 @@ func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 
 	v, loaded := d.daoMap.LoadOrStore(daoKey, newDao)
 	if loaded {
-		// dao already created, just return the existing one
-		logging.Debugf("dao alreay exists: %s", daoKey)
 		return v.(*DAO)
 	}
+	logging.Debugf("DAO not found %s. New DAO created", daoKey)
 
 	// now initialize the table if necessary
 	if db.ShouldAutomigrate() {

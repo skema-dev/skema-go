@@ -18,7 +18,6 @@ import (
 
 func main() {
 	data.InitWithConfigFile("./config/database.yaml", "database")
-	// model.Register()
 
 	grpcSrv := grpcmux.NewServer(
 		grpc.ChainUnaryInterceptor(Interceptor1(), Interceptor2()),
