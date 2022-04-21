@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/skema-dev/skema-go/logging"
@@ -42,6 +43,26 @@ func (d *DAO) Name() string {
 
 func (d *DAO) Automigrate() {
 	d.db.AutoMigrate(d.model)
+}
+
+func (d *DAO) Create(value DaoModel) error {
+	tx := d.db.Create(value)
+	if tx.Error != nil {
+		logging.Errorf(tx.Error.Error())
+	}
+	return tx.Error
+}
+
+func (d *DAO) Update(query *QueryParams, value DaoModel) error {
+	tx := d.db.Model(&d.model).Where(*query).Updates(value)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return errors.New("Doesn't found matching row to update")
+	}
+
+	return nil
 }
 
 // Update if exists (by queryColumns), insert new one if not existing

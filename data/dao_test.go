@@ -33,6 +33,7 @@ func (s *daoTestSuite) SetupTest() {
 
 func (s *daoTestSuite) TestDAOInSequence() {
 	s.testSampleDAO()
+	s.testCreateAndUpdateDAO()
 	s.testDeleteDAO()
 }
 
@@ -86,6 +87,43 @@ func (s *daoTestSuite) testSampleDAO() {
 	assert.Equal(s.T(), 1, len(results))
 	assert.Equal(s.T(), "usa", results[0].Nation)
 	assert.Equal(s.T(), "san francisco", results[0].City)
+}
+
+func (s *daoTestSuite) testCreateAndUpdateDAO() {
+	yaml := `
+type: sqlite
+filepath: './test1.db'
+`
+	dbInstance, _ := db.NewSqliteDatabase(config.NewConfigWithString(yaml))
+	dao := db.NewDAO(dbInstance, &SampleModel{})
+	dao.Automigrate()
+	assert.NotNil(s.T(), dao)
+
+	dao.Create(&SampleModel{Name: "user1", Sex: "female", Nation: "china", City: "shenzhen"})
+	dao.Create(&SampleModel{Name: "user2", Sex: "female", Nation: "japan", City: "tokyo"})
+	dao.Create(&SampleModel{Name: "user3", Sex: "female", Nation: "france", City: "paris"})
+	dao.Create(&SampleModel{Name: "user4", Sex: "male", Nation: "china", City: "shanghai"})
+	dao.Create(&SampleModel{Name: "user5", Sex: "male", Nation: "china", City: "shenzhen"})
+
+	rs := []SampleModel{}
+	dao.Query(&db.QueryParams{}, &rs)
+	assert.Equal(s.T(), 5, len(rs))
+
+	err := dao.Create(&SampleModel{Name: "user4", Sex: "male", Nation: "us", City: "seattle"})
+	assert.NotNil(s.T(), err)
+
+	err = dao.Update(&db.QueryParams{"name": "user4", "sex": "male"}, &SampleModel{Sex: "female"})
+	assert.Nil(s.T(), err)
+
+	rs = []SampleModel{}
+	dao.Query(&db.QueryParams{"name": "user4"}, &rs)
+	assert.Equal(s.T(), 1, len(rs))
+	assert.Equal(s.T(), "female", rs[0].Sex)
+
+	err = dao.Update(&db.QueryParams{"name": "user10", "sex": "male"}, &SampleModel{Sex: "female"})
+	assert.NotNil(s.T(), err)
+
+	os.RemoveAll("./test1.db")
 }
 
 func (s *daoTestSuite) testDeleteDAO() {
