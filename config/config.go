@@ -110,12 +110,45 @@ func (c *Config) GetIntArray(key string) []int {
 // then concatenate to uset the fullpath to get the sub config
 func (c *Config) GetMapConfig(key string) map[string]Config {
 	result := map[string]Config{}
-	values := c.viperData.Get(key).(map[string]interface{})
+	data := c.viperData.Get(key)
 
+	if data == nil {
+		return nil
+	}
+
+	values := data.(map[string]interface{})
 	for k := range values {
 		path := key + "." + k
 		conf := c.GetSubConfig(path)
 		result[k] = *conf
+	}
+
+	return result
+}
+
+// For config as below:
+// keys:
+//   - key1:
+//       value: xxxxxx
+//   - key2:
+//       value: xxxxxx
+//
+// we start with the parent key "keys", and locate the subkey "key1" "key2"...,
+// then concatenate to uset the fullpath to get the sub config
+func (c *Config) GetMapFromArray(key string) map[string]interface{} {
+	result := map[string]interface{}{}
+	data := c.viperData.Get(key)
+
+	if data == nil {
+		return nil
+	}
+
+	values := data.([]interface{})
+	for _, v := range values {
+		mapValue := v.(map[interface{}]interface{})
+		for k, v1 := range mapValue {
+			result[k.(string)] = v1
+		}
 	}
 
 	return result

@@ -72,6 +72,8 @@ func (s *managerTestSuite) TestAllInSequence() {
 	s.testAddDbFromConfig()
 	s.testCreatSqlitefileFromConfig()
 	s.testCreatDAO()
+	s.testCreateDbWithTypeConfig()
+	s.testCreateMutipleDbsWithTypeConfig()
 }
 
 func (s *managerTestSuite) testAddDbFromConfig() {
@@ -113,7 +115,7 @@ func (s *managerTestSuite) testCreatDAO() {
 	dbConfig := config.NewConfigWithString(testConfig2)
 	data.InitWithConfig(dbConfig, "database")
 
-	dao := data.Manager().GetDaoForDb("db2", TestModel1{})
+	dao := data.Manager().GetDaoForDb("db2", TestModel1{}, true)
 	dao.Upsert(&TestModel1{
 		Name: "test1",
 	}, nil, nil)
@@ -126,6 +128,78 @@ func (s *managerTestSuite) testCreatDAO() {
 	assert.Equal(s.T(), 2, len(result))
 
 	os.RemoveAll("hello4.db")
+}
+
+func (s *managerTestSuite) testCreateDbWithTypeConfig() {
+	os.RemoveAll("hello5.db")
+	data.RegisterModelType(&TestModel1{})
+	data.RegisterModelType(&TestModel2{})
+
+	testConfig := `
+database:
+    db1:
+        type: sqlite
+        filepath: hello5.db
+        dbname: hello5
+        automigrate: true
+        models:
+            - TestModel1:
+            - TestModel2:
+`
+	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
+
+	assert.NotNil(s.T(), data.Manager().GetDAO(&TestModel1{}))
+	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
+
+	dao := data.Manager().GetDAO(&TestModel1{})
+	dao.Create(&TestModel1{Name: "aaaaa"})
+	dao.Create(&TestModel1{Name: "bbbbb"})
+
+	result := []TestModel1{}
+	dao.Query(&data.QueryParams{}, &result)
+	assert.Equal(s.T(), 2, len(result))
+
+	os.RemoveAll("hello5.db")
+}
+
+func (s *managerTestSuite) testCreateMutipleDbsWithTypeConfig() {
+	data.RegisterModelType(&TestModel1{})
+	data.RegisterModelType(&TestModel2{})
+
+	testConfig := `
+database:
+    db1:
+        type: sqlite
+        filepath: hello5.db
+        dbname: hello5
+        automigrate: true
+        models:
+            - TestModel1:
+            - TestModel2:
+    db2:
+        type: memory
+        dbname: hello6
+        automigrate: true
+        models:
+            - TestModel1:
+                  package: github.com/skema-dev/skema-go/data_test
+            - TestModel2:
+                  package: github.com/skema-dev/skema-go/data_test
+`
+	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
+
+	assert.NotNil(s.T(), data.Manager().GetDaoForDb("db2", &TestModel1{}))
+	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
+
+	dao := data.Manager().GetDaoForDb("db2", &TestModel1{})
+	dao.Create(&TestModel1{Name: "aaaaa"})
+	dao.Create(&TestModel1{Name: "bbbbb"})
+
+	result := []TestModel1{}
+	dao.Query(&data.QueryParams{}, &result)
+	assert.Equal(s.T(), 2, len(result))
+
+	os.RemoveAll("hello5.db")
 }
 
 func TestManagerTestSuite(t *testing.T) {

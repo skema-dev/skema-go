@@ -1,8 +1,14 @@
 package model
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 )
+
+func init() {
+	
+}
 
 type User struct {
 	gorm.Model

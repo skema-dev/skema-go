@@ -154,6 +154,24 @@ func (s *configTestSuite) TestKeysMap() {
 
 }
 
+func (s *configTestSuite) TestConfigArray() {
+	confText := `
+data:
+   - value1:
+   - value2:
+        name: 123
+        data: "abcde"
+`
+	conf := NewConfigWithString(confText)
+
+	v := conf.GetMapFromArray("data")
+	assert.Nil(s.T(), v["value1"])
+	assert.NotNil(s.T(), v["value2"])
+
+	value2 := v["value2"].(map[interface{}]interface{})
+	assert.Equal(s.T(), 123, value2["name"].(int))
+	assert.Equal(s.T(), "abcde", value2["data"].(string))
+}
 func TestConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(configTestSuite))
 }
