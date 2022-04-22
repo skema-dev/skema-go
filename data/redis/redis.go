@@ -22,6 +22,6 @@ func NewRedis(config *config.Config) (*redis.Client, error) {
 	if ret := rdb.Ping(context.Background()); ret.Err() != nil {
 		return nil, ret.Err()
 	}
-	logging.Debugf("connecting to %s success!", addr)
+	logging.Debugf("connecting to redis server %s success!", addr)
 	return rdb, nil
 }
