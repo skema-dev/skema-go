@@ -48,8 +48,6 @@ func (s *rpcTestServer) Heathcheck(
 		user.Query(&data.QueryParams{}, &rs)
 		result = fmt.Sprintf("total: %d", len(rs))
 
-		_ = model.Address{}
-
 		if len(rs) > 3 {
 			err = user.Delete("name like 'user%'")
 			if err != nil {

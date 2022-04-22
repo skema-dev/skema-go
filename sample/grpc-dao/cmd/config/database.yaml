@@ -5,6 +5,6 @@ database:
      automigrate: true
      models:
          - User:
-         - Addrss:
+         - Address:
              package: grpc-dao/internal/model
     
