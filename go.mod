@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v0.1.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/spf13/viper v1.11.0
