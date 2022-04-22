@@ -249,6 +249,9 @@ func (d *DataManager) lookupDaoModel(db string, table string) *DAO {
 			logging.Errorw("No model found", "db", db, "tablename", table)
 			return nil
 		}
+
+		// this happens if no dao ever inititalized
+		return nil
 	}
 
 	daos, ok := d.daoMap[db]

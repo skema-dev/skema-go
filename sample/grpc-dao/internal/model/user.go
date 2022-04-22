@@ -1,13 +1,11 @@
 package model
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
 func init() {
-	
+	// data.RegisterModelType(&User{})
 }
 
 type User struct {
