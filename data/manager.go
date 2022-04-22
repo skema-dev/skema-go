@@ -131,11 +131,11 @@ func (d *DataManager) initDaoModelForDb(dbkey string, models map[string]interfac
 				// package specified, look into the specific registry map
 				types, ok := modelTypeRegistry[pkg.(string)]
 				if !ok {
-					logging.Fatalw("incorrect package when migrating db model", "package", pkg, "mode type", modelTypeName)
+					logging.Fatalw("incorrect package when initializing dao", "package", pkg, "mode type", modelTypeName)
 				}
 				modelType, ok := types[modelTypeName]
 				if !ok {
-					logging.Fatalw("incorrect type name when migrating db model", "package", pkg, "mode type", modelTypeName)
+					logging.Fatalw("incorrect type name when initializing dao", "package", pkg, "mode type", modelTypeName, "types", types)
 				}
 				daoModel = reflect.New(modelType).Elem().Interface().(DaoModel)
 			} else {

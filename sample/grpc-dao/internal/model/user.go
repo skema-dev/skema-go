@@ -1,11 +1,12 @@
 package model
 
 import (
+	"github.com/skema-dev/skema-go/data"
 	"gorm.io/gorm"
 )
 
 func init() {
-	// data.RegisterModelType(&User{})
+	data.RegisterModelType(&User{})
 }
 
 type User struct {

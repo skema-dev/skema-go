@@ -3,4 +3,8 @@ database:
      type: sqlite
      filepath: default.db
      automigrate: true
+     models:
+         - User:
+         - Addrss:
+             package: grpc-dao/internal/model
     
