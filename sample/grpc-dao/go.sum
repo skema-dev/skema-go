@@ -445,8 +445,8 @@ github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFR
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
-github.com/skema-dev/skema-go v0.0.0-20220420125737-d74750d62276 h1:h9OtOqvhdwCRUs52PesFrjSTC60biJs/RVnRzWVWnvw=
-github.com/skema-dev/skema-go v0.0.0-20220420125737-d74750d62276/go.mod h1:Dat4CoAd5naQ94bck4tUGmqa1kJPMZ4kKt1bORG0gTw=
+github.com/skema-dev/skema-go v0.0.0-20220421141713-0be70bd00fcc h1:CToK5DmJZMp3SvkNGYxheh2SBY/k2qxN5x/bbcFjtrg=
+github.com/skema-dev/skema-go v0.0.0-20220421141713-0be70bd00fcc/go.mod h1:Dat4CoAd5naQ94bck4tUGmqa1kJPMZ4kKt1bORG0gTw=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.8.2 h1:xehSyVa0YnHWsJ49JFljMpg1HX19V6NDZ1fkm1Xznbo=
 github.com/spf13/afero v1.8.2/go.mod h1:CtAatgMJh6bJEIs48Ay/FOnkljP3WeGUG0MC1RfAqwo=

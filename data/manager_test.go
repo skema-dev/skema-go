@@ -113,8 +113,6 @@ func (s *managerTestSuite) testCreatDAO() {
 	dbConfig := config.NewConfigWithString(testConfig2)
 	data.InitWithConfig(dbConfig, "database")
 
-	data.Manager().RegisterDaoModelsForDb("db2", []data.DaoModel{TestModel1{}, TestModel2{}})
-
 	dao := data.Manager().GetDaoForDb("db2", TestModel1{})
 	dao.Upsert(&TestModel1{
 		Name: "test1",
