@@ -52,8 +52,8 @@ func (d *RedisManager) ReadWithConfig(conf *config.Config, key string) *RedisMan
 }
 
 // AddRedisClientsInPool create redisClients putting in redisPool
-func (d *RedisManager) AddRedisClientsInPool(conf *config.Config, dbKey string) {
-	if dbKey == "" {
+func (d *RedisManager) AddRedisClientsInPool(conf *config.Config, key string) {
+	if key == "" {
 		logging.Fatalf("A redis datasource key must be specified!")
 	}
 
@@ -62,20 +62,19 @@ func (d *RedisManager) AddRedisClientsInPool(conf *config.Config, dbKey string) 
 		logging.Fatalf("failed creating redis client")
 	}
 
-	d.redisPool[dbKey] = rdb
+	d.redisPool[key] = rdb
 }
 
 // GetRedis get a redis client
-func (d *RedisManager) GetRedis(dbKey string) *redis.Client {
-	// use default as dbKey if dbKey is empty
-	if dbKey == "" {
-		dbKey = "default"
+func (d *RedisManager) GetRedis(key string) *redis.Client {
+	if key == "" {
+		logging.Fatalf("Key can not be empty!")
 	}
 
 	// get redisInstance from redisPoll
-	rdb, ok := d.redisPool[dbKey]
+	rdb, ok := d.redisPool[key]
 	if !ok {
-		logging.Fatalf("Get a redis client failed!")
+		logging.Fatalf("Get a redis client failed with key: %s", key)
 		return nil
 	}
 	return rdb
