@@ -17,7 +17,7 @@ And this is barely the minimum code to setup a mysql connection. In a produciton
 
 Furthermore, we need to craft something like a DAO object(struct) for CRUD operations (Yes, gorm/xorm and other libs provides fantastic APIs to do all kinds of database operations. They even support at least 4~5 different ways to do a simple query...but all we need is just straightforward CRUD. Especially in this microservice and distributed data service world, we don't really care about transactions/joint tables/foreign keys/etc. If the data layer gets really complicated, we'd better off building a dedicated data service, instead of relying on local orm libraries.)  
 
-*How does skema-go can help?*
+*How can skema-go help?*
 
 ## Config driven, NOT code driven!  
 
