@@ -27,8 +27,15 @@ elastic:
 	assert.Nil(t, err)
 
 	err = client.Index("test1", "aaaaa2", &TestData{UUID: "aaaaaa-bbbbbb-2", Name: "user2"})
+	err = client.Index("test1", "aaaaa3", &TestData{UUID: "aaaaaa-bbbbbb-2", Name: "user3"})
 
-	result, _ := client.Search("test1", map[string]interface{}{"Name": "user1"})
+	result, _ := client.Search("test1", "match", map[string]interface{}{"Name": "user1"})
 	assert.Equal(t, "aaaaaa-bbbbbb", result[0]["UUID"].(string))
 	assert.Equal(t, "user1", result[0]["Name"].(string))
+
+	result, _ = client.Search("test1", "wildcard", map[string]interface{}{"Name": "use*"})
+	assert.Equal(t, 3, len(result))
+
+	result, _ = client.Search("test1", "terms", map[string]interface{}{"Name": []string{"user1", "user3"}})
+	assert.Equal(t, 2, len(result))
 }

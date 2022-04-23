@@ -1,10 +1,8 @@
 package elastic
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	es "github.com/elastic/go-elasticsearch/v7"
@@ -74,32 +72,9 @@ func (e *elasticClientV7) Index(index string, id string, value interface{}) erro
 	return nil
 }
 
-func (e *elasticClientV7) Search(index string, query map[string]interface{}) ([]map[string]interface{}, error) {
-	var buf bytes.Buffer
-	condition := map[string]interface{}{
-		"query": map[string]interface{}{
-			"match": query,
-		},
-	}
-	if err := json.NewEncoder(&buf).Encode(condition); err != nil {
-		return nil, logging.Errorf(err.Error())
-	}
-
-	fmt.Printf("Query: %s\n", buf.String())
-
-	res, err := e.client.Search(
-		e.client.Search.WithContext(context.Background()),
-		e.client.Search.WithIndex(index),
-		e.client.Search.WithBody(&buf),
-		e.client.Search.WithTrackTotalHits(true),
-		e.client.Search.WithPretty(),
-	)
-	if err != nil {
-		return nil, logging.Errorf(err.Error())
-	}
-
+func (e *elasticClientV7) processSearchResult(res *esapi.Response) ([]map[string]interface{}, error) {
 	resMap := map[string]interface{}{}
-	err = json.NewDecoder(res.Body).Decode(&resMap)
+	err := json.NewDecoder(res.Body).Decode(&resMap)
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
@@ -112,6 +87,32 @@ func (e *elasticClientV7) Search(index string, query map[string]interface{}) ([]
 		hitData := hit.(map[string]interface{})
 		result = append(result, hitData["_source"].(map[string]interface{}))
 	}
-
 	return result, nil
+}
+
+func (e *elasticClientV7) Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error) {
+	searchQuery, err := buildTermQuery(termQueryType, query)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+
+	logging.Debugf("Search Query: %s", searchQuery)
+
+	res, err := e.client.Search(
+		e.client.Search.WithContext(context.Background()),
+		e.client.Search.WithIndex(index),
+		e.client.Search.WithBody(strings.NewReader(searchQuery)),
+		e.client.Search.WithTrackTotalHits(true),
+		e.client.Search.WithPretty(),
+	)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+
+	resMap := map[string]interface{}{}
+	err = json.NewDecoder(res.Body).Decode(&resMap)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+	return processSearchResult(resMap)
 }

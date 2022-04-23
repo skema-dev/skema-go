@@ -75,6 +75,29 @@ func (e *elasticClientV8) Index(index string, id string, value interface{}) erro
 	return nil
 }
 
-func (e *elasticClientV8) Search(index string, query map[string]interface{}) ([]map[string]interface{}, error) {
-	return nil, nil
+func (e *elasticClientV8) Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error) {
+	searchQuery, err := buildTermQuery(termQueryType, query)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+
+	logging.Debugf("Search Query: %s", searchQuery)
+
+	res, err := e.client.Search(
+		e.client.Search.WithContext(context.Background()),
+		e.client.Search.WithIndex(index),
+		e.client.Search.WithBody(strings.NewReader(searchQuery)),
+		e.client.Search.WithTrackTotalHits(true),
+		e.client.Search.WithPretty(),
+	)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+	resMap := map[string]interface{}{}
+	err = json.NewDecoder(res.Body).Decode(&resMap)
+	if err != nil {
+		return nil, logging.Errorf(err.Error())
+	}
+
+	return processSearchResult(resMap)
 }
