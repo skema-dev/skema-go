@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,9 +107,12 @@ func Warnf(format string, args ...interface{}) {
 	logger.Sync()
 }
 
-func Errorf(format string, args ...interface{}) {
+func Errorf(format string, args ...interface{}) error {
+	msg := fmt.Sprintf(format, args...)
 	logger.Errorf(format, args...)
 	logger.Sync()
+
+	return errors.New(msg)
 }
 
 func Panicf(format string, args ...interface{}) {
