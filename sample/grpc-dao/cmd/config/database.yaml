@@ -3,8 +3,3 @@ database:
      type: sqlite
      filepath: default.db
      automigrate: true
-     models:
-         - User:
-         - Address:
-             package: grpc-dao/internal/model
-    

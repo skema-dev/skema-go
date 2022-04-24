@@ -142,9 +142,6 @@ database:
         filepath: hello5.db
         dbname: hello5
         automigrate: true
-        models:
-            - TestModel1:
-            - TestModel2:
 `
 	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
 
@@ -173,23 +170,15 @@ database:
         filepath: hello5.db
         dbname: hello5
         automigrate: true
-        models:
-            - TestModel1:
-            - TestModel2:
     db2:
         type: memory
         dbname: hello6
         automigrate: true
-        models:
-            - TestModel1:
-                  package: github.com/skema-dev/skema-go/data_test
-            - TestModel2:
-                  package: github.com/skema-dev/skema-go/data_test
 `
 	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
 
 	assert.NotNil(s.T(), data.Manager().GetDaoForDb("db2", &TestModel1{}))
-	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
+	//	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
 
 	dao := data.Manager().GetDaoForDb("db2", &TestModel1{})
 	dao.Create(&TestModel1{Name: "aaaaa"})
