@@ -3,6 +3,7 @@ package elastic
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"strings"
 
 	es "github.com/elastic/go-elasticsearch/v7"
@@ -16,6 +17,7 @@ type elasticClientV7 struct {
 }
 
 func newElasticClientV7(conf *config.Config) *elasticClientV7 {
+	var err error
 	addresses := conf.GetStringArray("addresses")
 	cfg := es.Config{
 		Addresses: addresses,
@@ -26,14 +28,24 @@ func newElasticClientV7(conf *config.Config) *elasticClientV7 {
 	if username != "" && password != "" {
 		cfg.Username = username
 		cfg.Password = password
+		logging.Debugf("Elastic Account  %s:%s", username, password)
+	}
+
+	var cert []byte
+	if certFile := conf.GetString("cert"); certFile != "" {
+		cert, err = ioutil.ReadFile("./http_ca.crt")
+		if err != nil {
+			logging.Fatalf("ERROR: Unable to read CA from %q: %s", certFile, err)
+		}
+		cfg.CACert = cert
 	}
 
 	esclient, err := es.NewClient(cfg)
 	if err != nil {
-		logging.Errorf(err.Error())
+		logging.Errorf("Failed creating es client: %s", err.Error())
 		return nil
 	}
-	esclient.Info()
+
 	if info, err := esclient.Info(); err == nil {
 		logging.Infof(info.String())
 	} else {
