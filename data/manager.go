@@ -203,17 +203,6 @@ func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel, opts ...bool) *D
 		return nil
 	}
 
-	lazyLoad := false
-	if len(opts) > 0 {
-		lazyLoad = opts[0]
-	}
-
-	if !lazyLoad {
-		logging.Debugf("lazyloading for %s.%s", dbKey, model.TableName())
-		v := d.lookupDaoModel(dbKey, model.TableName())
-		return v
-	}
-
 	newDao := DAO{db: db, model: model}
 	dbs, ok := d.daoMap[dbKey]
 	if !ok {
@@ -230,40 +219,4 @@ func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel, opts ...bool) *D
 	}
 
 	return &newDao
-}
-
-// lookup for dao models in a double map structure
-func (d *DataManager) lookupDaoModel(db string, table string) *DAO {
-	if db == "" {
-		// lookup in the 1st db
-		if len(d.daoMap) > 1 {
-			logging.Errorf(("multiple databases exists. please specify the db name in config."))
-			return nil
-		}
-		for _, v := range d.daoMap {
-			// use the first one
-			if dao, ok := v[table]; ok {
-				return &dao
-			}
-
-			logging.Errorw("No model found", "db", db, "tablename", table)
-			return nil
-		}
-
-		// this happens if no dao ever inititalized
-		return nil
-	}
-
-	daos, ok := d.daoMap[db]
-	if !ok {
-		logging.Fatalf("Incorrect db name when looking up dao models: %s", db)
-		return nil
-	}
-
-	if dao, ok := daos[table]; ok {
-		return &dao
-	}
-
-	logging.Errorf("Incorrect table name when looking up dao model %s in %s", table, db)
-	return nil
 }

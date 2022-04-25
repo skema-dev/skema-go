@@ -1,13 +1,8 @@
 package model
 
 import (
-	"github.com/skema-dev/skema-go/data"
 	"gorm.io/gorm"
 )
-
-func init() {
-	data.RegisterModelType(&Address{})
-}
 
 type Address struct {
 	gorm.Model
