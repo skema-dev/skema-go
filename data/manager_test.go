@@ -82,7 +82,7 @@ func (s *managerTestSuite) testAddDbFromConfig() {
 	dbManager := data.NewDataManager()
 
 	for k, v := range configs {
-		dbManager.AddDatabaseWithConfig(&v, k)
+		dbManager.AddDatabaseWithConfig(&v, k, dbConfig)
 	}
 
 	db1 := dbManager.GetDB("db1")

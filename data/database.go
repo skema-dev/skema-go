@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/skema-dev/skema-go/config"
+	"github.com/skema-dev/skema-go/elastic"
 	"github.com/skema-dev/skema-go/logging"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -15,11 +16,20 @@ import (
 // wrap standard gorm.DB. For now, it's not doing much.
 type Database struct {
 	gorm.DB
-	automigrate bool
+	automigrate   bool
+	elasticClient elastic.Elastic
 }
 
 func (d Database) ShouldAutomigrate() bool {
 	return d.automigrate
+}
+
+func (d *Database) SetElastic(client elastic.Elastic) {
+	d.elasticClient = client
+}
+
+func (d *Database) Elastic() elastic.Elastic {
+	return d.elasticClient
 }
 
 // initiate mysql db and return the instance

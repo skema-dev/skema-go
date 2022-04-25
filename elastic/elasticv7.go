@@ -58,12 +58,17 @@ func newElasticClientV7(conf *config.Config) *elasticClientV7 {
 }
 
 func (e *elasticClientV7) Index(index string, id string, value interface{}) error {
+	if index == "" || id == "" {
+		return logging.Errorf("index and id should not be empty. index: %s, id: %s", index, id)
+	}
 	data, err := json.Marshal(value)
 	if err != nil {
 		return logging.Errorf(err.Error())
 	}
 
 	s := string(data)
+	logging.Debugw("elastic index request", "index", index, "id", id, "body", s)
+
 	req := esapi.IndexRequest{
 		Index:      index,
 		DocumentID: id,
@@ -112,10 +117,26 @@ func (e *elasticClientV7) Search(index string, termQueryType string, query map[s
 	return processSearchResult(resMap)
 }
 
-func (e *elasticClientV7) Delete(index string, id string) {
-	_, err := e.client.Delete(index, id)
+func (e *elasticClientV7) Delete(index string, ids []string) {
+	searchQuery, err := buildTermQuery("terms", map[string]interface{}{"id": ids})
+
+	_, err = e.client.DeleteByQuery([]string{index}, strings.NewReader(searchQuery))
 	if err != nil {
-		logging.Errorf("failded to delete %s_%s: %s", index, id, err.Error())
+		logging.Errorf("failded to deletes: %s", err.Error())
 		return
 	}
+}
+
+func (e *elasticClientV7) DeleteIndex(indexes []string) {
+	req := esapi.IndicesDeleteRequest{
+		Index: indexes,
+	}
+
+	_, err := req.Do(context.Background(), e.client)
+	if err != nil {
+		logging.Errorf(err.Error())
+		return
+	}
+
+	logging.Debugf("index deleted %d", len(indexes))
 }

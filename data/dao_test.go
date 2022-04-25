@@ -53,7 +53,7 @@ func (s *daoTestSuite) testSampleDAO() {
 	assert.Equal(s.T(), 1, len(results))
 	assert.Equal(s.T(), "china", results[0].Nation)
 
-	err = dao.Query(&db.QueryParams{"nation": "england"}, &results)
+	err = dao.Query(&db.QueryParams{"name": "user2"}, &results)
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), 1, len(results))
 	assert.Equal(s.T(), "user2", results[0].Name)
@@ -120,8 +120,9 @@ filepath: './test1.db'
 	assert.Equal(s.T(), 1, len(rs))
 	assert.Equal(s.T(), "female", rs[0].Sex)
 
+	// updating non exist user, nothing happen
 	err = dao.Update(&db.QueryParams{"name": "user10", "sex": "male"}, &SampleModel{Sex: "female"})
-	assert.NotNil(s.T(), err)
+	assert.Nil(s.T(), err)
 
 	os.RemoveAll("./test1.db")
 }

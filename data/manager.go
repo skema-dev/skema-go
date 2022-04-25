@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/skema-dev/skema-go/config"
+	"github.com/skema-dev/skema-go/elastic"
 	"github.com/skema-dev/skema-go/logging"
 )
 
@@ -13,6 +14,8 @@ type DataManager struct {
 	databases map[string]*Database
 	// [db_key:[table_name:model]]
 	daoMap map[string]map[string]DAO
+
+	elasticClient elastic.Elastic
 }
 
 var (
@@ -76,13 +79,13 @@ func (d *DataManager) WithConfig(conf *config.Config, key string) *DataManager {
 
 	confs := conf.GetMapConfig(key)
 	for k, v := range confs {
-		d.AddDatabaseWithConfig(&v, k)
+		d.AddDatabaseWithConfig(&v, k, conf)
 	}
 
 	return d
 }
 
-func (d *DataManager) AddDatabaseWithConfig(conf *config.Config, dbKey string) {
+func (d *DataManager) AddDatabaseWithConfig(conf *config.Config, dbKey string, originalConfig *config.Config) {
 	logging.Debugf("Add Database for %s", dbKey)
 	if dbKey == "" {
 		logging.Fatalf("AddDatabaseWithConfig must specify a key for the db!")
@@ -105,6 +108,17 @@ func (d *DataManager) AddDatabaseWithConfig(conf *config.Config, dbKey string) {
 	models := conf.GetMapFromArray("models")
 	if models != nil {
 		d.initDaoModelForDb(dbKey, models)
+	}
+
+	// check if elasticsearch is defined
+	queryConf := conf.GetSubConfig("query")
+	if queryConf != nil {
+		queryType := queryConf.GetString("type")
+		if queryType == "elastic" {
+			elasticConfigKey := queryConf.GetString("name")
+			client := elastic.NewElasticClient(originalConfig.GetSubConfig(elasticConfigKey))
+			db.SetElastic(client)
+		}
 	}
 
 }
@@ -150,6 +164,7 @@ func (d *DataManager) initDaoModelForDb(dbkey string, models map[string]interfac
 		d.GetDaoForDb(dbkey, daoModel)
 
 		db := d.GetDB(dbkey)
+
 		if db.automigrate {
 			db.AutoMigrate(daoModel)
 		}
@@ -203,20 +218,22 @@ func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 		return nil
 	}
 
-	newDao := DAO{db: db, model: model}
+	// newDao := DAO{db: db, model: model}
+	newDao := NewDAO(db, model)
 	dbs, ok := d.daoMap[dbKey]
 	if !ok {
 		dbs = make(map[string]DAO)
 		d.daoMap[dbKey] = dbs
 	}
 
-	dbs[model.TableName()] = newDao
+	dbs[model.TableName()] = *newDao
 	logging.Debugw("DAO not found. New DAO created", "db", dbKey, "table", model.TableName())
 
+	newDao.SetElasticClient(db.Elastic())
 	// now initialize the table if necessary
 	if db.ShouldAutomigrate() {
 		db.AutoMigrate(model)
 	}
 
-	return &newDao
+	return newDao
 }

@@ -1,7 +1,7 @@
 package data
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -44,14 +44,6 @@ func NewDAO(db *Database, model DaoModel) *DAO {
 	}
 	dao.initColumnFieldTable()
 
-	modelValue := reflect.ValueOf(dao.model)
-	params := []reflect.Value{reflect.ValueOf(dao)}
-	method := modelValue.MethodByName("SetDAO")
-	if !method.IsValid() {
-		logging.Fatalf("incorrect model type. Make sure your model contains data.Model field")
-	}
-	method.Call(params)
-
 	return dao
 }
 
@@ -81,19 +73,22 @@ func (d *DAO) Automigrate() {
 
 func (d *DAO) Create(value DaoModel) error {
 	tx := d.db.Create(value)
+	defer d.TryUpdateIndex(tx, value)
+
 	if tx.Error != nil {
 		logging.Errorf(tx.Error.Error())
 	}
+
+	fmt.Printf("create result: %d\n", tx.RowsAffected)
 	return tx.Error
 }
 
 func (d *DAO) Update(query *QueryParams, value DaoModel) error {
-	tx := d.db.Model(&d.model).Where(*query).Updates(value)
+	tx := d.db.Where(*query).Updates(value)
+	defer d.TryUpdateIndex(tx, value)
+
 	if tx.Error != nil {
 		return tx.Error
-	}
-	if tx.RowsAffected == 0 {
-		return errors.New("Doesn't found matching row to update")
 	}
 
 	return nil
@@ -101,12 +96,13 @@ func (d *DAO) Update(query *QueryParams, value DaoModel) error {
 
 // Update if exists (by queryColumns), insert new one if not existing
 func (d *DAO) Upsert(value DaoModel, queryColumns []string, assignedColums []string) error {
-	var result *gorm.DB
+	var tx *gorm.DB
+	defer func() { d.TryUpdateIndex(tx, value) }()
 
 	if queryColumns == nil || len(queryColumns) == 0 {
 		// no query columns exists, jut create new record
-		result = d.db.Create(value)
-		return result.Error
+		tx = d.db.Create(value)
+		return tx.Error
 	}
 
 	queries := []clause.Column{}
@@ -116,19 +112,20 @@ func (d *DAO) Upsert(value DaoModel, queryColumns []string, assignedColums []str
 
 	if assignedColums == nil && len(assignedColums) == 0 {
 		// no specific assignment column found, update all
-		result = d.db.Clauses(clause.OnConflict{
+		tx = d.db.Clauses(clause.OnConflict{
 			Columns:   queries,
 			UpdateAll: true,
 		}).Create(value)
-		return result.Error
+		return tx.Error
 	}
 
 	// update only assigned column when conflict happends
-	result = d.db.Clauses(clause.OnConflict{
+	tx = d.db.Clauses(clause.OnConflict{
 		Columns:   queries,
 		DoUpdates: clause.AssignmentColumns(assignedColums),
 	}).Create(value)
-	return result.Error
+
+	return tx.Error
 }
 
 func (d *DAO) Query(
@@ -170,8 +167,23 @@ func (d *DAO) Query(
 	return tx.Error
 }
 
-func (d *DAO) Delete(conds ...interface{}) error {
-	tx := d.db.Delete(&d.model, conds...)
+func (d *DAO) Delete(query interface{}, args ...interface{}) error {
+	rs := []map[string]interface{}{}
+	tx := d.db.Model(&d.model).Where(query, args...).Find(&rs)
+	if tx.Error != nil {
+		return logging.Errorf(tx.Error.Error())
+	}
+
+	if len(rs) == 0 {
+		logging.Debugf("no mathing record found")
+		return nil
+	}
+	ids := make([]string, 0)
+	for _, r := range rs {
+		ids = append(ids, r["uuid"].(string))
+	}
+	d.DeleteFromElastic(ids)
+	tx = d.db.Model(&d.model).Where(query, args...).Delete(&d.model)
 	return tx.Error
 }
 
@@ -179,18 +191,27 @@ func (d *DAO) esIndexName() string {
 	return d.GetDB().Name() + "_" + d.model.TableName()
 }
 
-func (d *DAO) UpdateElasticIndex(data interface{}) {
+func (d *DAO) TryUpdateIndex(tx *gorm.DB, v DaoModel) {
+	if tx.Error != nil && tx.RowsAffected == 0 {
+		logging.Errorf("error happened or nothing updated.")
+		return
+	}
+	d.UpdateElasticIndex(v)
+}
+
+func (d *DAO) UpdateElasticIndex(data DaoModel) {
 	if d.es == nil {
 		return
 	}
 
-	d.es.Index(d.esIndexName(), d.model.PrimaryID(), data)
+	d.es.Index(d.esIndexName(), data.PrimaryID(), data)
 }
 
-func (d *DAO) DeleteFromElastic(id string) {
-	if d.es != nil {
-		d.es.Delete(d.esIndexName(), id)
+func (d *DAO) DeleteFromElastic(ids []string) {
+	if d.es == nil {
+		return
 	}
+	d.es.Delete(d.esIndexName(), ids)
 }
 
 func (d *DAO) searchFromElastic(
@@ -201,7 +222,7 @@ func (d *DAO) searchFromElastic(
 		return nil
 	}
 
-	newQuery := QueryParams{}
+	newQuery := map[string]interface{}{}
 	for k, v := range *query {
 		fieldname, ok := d.columnToField[k]
 		if !ok {
@@ -217,6 +238,9 @@ func (d *DAO) searchFromElastic(
 	}
 
 	modelType := reflect.TypeOf(d.model)
+	if modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
 
 	reflectedResult := reflect.ValueOf(result)
 	if reflect.TypeOf(result).Kind() == reflect.Ptr {

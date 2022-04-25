@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/data"
-	"github.com/skema-dev/skema-go/elastic"
 	"github.com/skema-dev/skema-go/logging"
 )
 
@@ -19,80 +20,82 @@ func (TestData) TableName() string {
 }
 
 func main() {
-	dbYaml := `
+	yamlV7 := `
 databases:
   db1:
     type: sqlite
     filepath: default.db
     dbname: test
     automigrate: true
-`
-	yamlWithCert := `
-elastic:
-    version: v8
-    addresses:
-        - https://localhost:9200
-    username: elastic
-    password: sN89iAwxjbyaj=ptTeaP
-    cert: ./http_ca.crt
-`
-	yamlDefault := `
-elastic:
+    query:
+       type: elastic
+       name: elastic-search
+
+elastic-search:
     version: v7
     addresses:
         - http://localhost:9200
 `
-	version := flag.String("version", "v7", "specify elasticsearch version: v7 or v8")
-	var client elastic.Elastic
+	yamlV8 := `
+databases:
+  db1:
+    type: sqlite
+    filepath: default.db
+    dbname: test
+    automigrate: true
+    query:
+       type: elastic
+       name: elastic-search
 
+elastic-search:
+    version: v7
+    addresses:
+        - http://localhost:9200
+`
+
+	version := flag.String("version", "v7", "specify elastic version: v7 or v8")
 	flag.Parse()
 
-	data.InitWithConfig(config.NewConfigWithString(dbYaml), "databases")
-	dao := data.Manager().GetDAO(TestData{}, true)
-
-	switch *version {
-	case "v8":
-		client = elastic.NewElasticClient(config.NewConfigWithString(yamlWithCert).GetSubConfig("elastic"))
-	case "v7":
-		client = elastic.NewElasticClient(config.NewConfigWithString(yamlDefault).GetSubConfig("elastic"))
-	default:
-		logging.Fatalf("version must be v7 or v8")
+	s := yamlV7
+	if *version == "v8" {
+		s = yamlV8
 	}
-	dao.SetElasticClient(client)
 
-	data1 := TestData{Model: data.Model{UUID: "aaaaaa-bbbbbb"}, Name: "user1"}
-	data2 := TestData{Model: data.Model{UUID: "aaaaaa-bbbbbb-2"}, Name: "user2"}
-	data3 := TestData{Model: data.Model{UUID: "aaaaaa-bbbbbb-3"}, Name: "user3"}
-
+	os.RemoveAll("./default.db")
+	data.InitWithConfig(config.NewConfigWithString(s), "databases")
+	dao := data.Manager().GetDAO(&TestData{})
 	indexName := dao.GetDB().Name() + "_" + TestData{}.TableName()
-	err := client.Index(indexName, "aaaaa1", &data1)
-	if err != nil {
-		logging.Fatalf(err.Error())
-	}
+	dao.DeleteFromElastic([]string{indexName})
 
-	err = client.Index(indexName, "aaaaa2", &data2)
-	err = client.Index(indexName, "aaaaa3", &data3)
-
+	// no es enabled
+	data1 := TestData{Name: "user1"}
+	data1.UUID = "10-aaaaaa-bbbbbb-1"
+	// var err error
 	result := []TestData{}
-	err = dao.Query(&data.QueryParams{"name": "user2"}, &result)
-	if err != nil {
-		logging.Fatalf(err.Error())
-	}
 
-	intEquals(1, len(result))
-	stringEquals("user2", result[0].Name)
-	stringEquals("aaaaaa-bbbbbb-2", result[0].UUID)
+	dao.Create(&data1)
 
+	fmt.Printf("******************Start Update database*******************\n")
 	result = []TestData{}
+	dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
+	fmt.Printf("%v\n", result)
 
-	dao.Update(&data.QueryParams{"uuid": data1.UUID}, data1)
-	err = dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
-	stringEquals("user1", result[0].Name)
+	data1.Name = "user1_3"
+	dao.Update(&data.QueryParams{"uuid": data1.UUID}, &data1)
 
-	data1.Name = "user1_1"
-	dao.Update(&data.QueryParams{"uuid": data1.UUID}, data1)
-	err = dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
-	stringEquals("user1_1", result[0].Name)
+	fmt.Printf("******************Update Done!!*******************\n")
+
+	dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
+	stringEquals("user1_3", result[0].Name)
+
+	// fmt.Printf("******************With Elasticsearch*******************\n")
+	data1.Name = "user1_2"
+	dao.Update(&data.QueryParams{"uuid": data1.UUID}, &data1)
+	dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
+	stringEquals("user1_2", result[0].Name)
+
+	fmt.Printf("All Done!\n")
+
 }
 
 func stringEquals(expected string, actual string) {

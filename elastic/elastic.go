@@ -11,13 +11,13 @@ import (
 type Elastic interface {
 	Index(index string, id string, value interface{}) error
 	Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error)
-	Delete(index string, id string)
+	Delete(index string, ids []string)
+	DeleteIndex(indexes []string)
 }
 
 func NewElasticClient(conf *config.Config) Elastic {
 	var result Elastic
 	version := conf.GetString("version", "v8")
-
 	switch version {
 	case "v8":
 		result = newElasticClientV8(conf)
