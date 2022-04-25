@@ -147,7 +147,7 @@ func (d *DataManager) initDaoModelForDb(dbkey string, models map[string]interfac
 			logging.Fatalw("incorrect definition for model", "model name", modelTypeName, "config", v)
 		}
 
-		d.GetDaoForDb(dbkey, daoModel, true)
+		d.GetDaoForDb(dbkey, daoModel)
 
 		db := d.GetDB(dbkey)
 		if db.automigrate {
@@ -191,12 +191,12 @@ func (d DataManager) GetDB(dbKey string) *Database {
 	return db
 }
 
-func (d *DataManager) GetDAO(model DaoModel, opts ...bool) *DAO {
-	return d.GetDaoForDb("", model, opts...)
+func (d *DataManager) GetDAO(model DaoModel) *DAO {
+	return d.GetDaoForDb("", model)
 }
 
 // register A dao model for the specified database
-func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel, opts ...bool) *DAO {
+func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 	db := d.GetDB(dbKey)
 	if db == nil {
 		logging.Errorf("incorrect dbKey when init dao in db manager: %s", dbKey)

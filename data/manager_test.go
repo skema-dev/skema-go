@@ -114,7 +114,7 @@ func (s *managerTestSuite) testCreatDAO() {
 	dbConfig := config.NewConfigWithString(testConfig2)
 	data.InitWithConfig(dbConfig, "database")
 
-	dao := data.Manager().GetDaoForDb("db2", TestModel1{}, true)
+	dao := data.Manager().GetDaoForDb("db2", TestModel1{})
 	dao.Upsert(&TestModel1{
 		Name: "test1",
 	}, nil, nil)
@@ -146,9 +146,7 @@ database:
             - TestModel2:
 `
 	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
-
 	assert.NotNil(s.T(), data.Manager().GetDAO(&TestModel1{}))
-	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
 
 	dao := data.Manager().GetDAO(&TestModel1{})
 	dao.Create(&TestModel1{Name: "aaaaa"})

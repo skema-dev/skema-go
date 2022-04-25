@@ -44,9 +44,13 @@ func NewDAO(db *Database, model DaoModel) *DAO {
 	}
 	dao.initColumnFieldTable()
 
-	modelValue := toPtr(reflect.ValueOf(dao.model))
+	modelValue := reflect.ValueOf(dao.model)
 	params := []reflect.Value{reflect.ValueOf(dao)}
-	modelValue.MethodByName("SetDAO").Call(params)
+	method := modelValue.MethodByName("SetDAO")
+	if !method.IsValid() {
+		logging.Fatalf("incorrect model type. Make sure your model contains data.Model field")
+	}
+	method.Call(params)
 
 	return dao
 }
