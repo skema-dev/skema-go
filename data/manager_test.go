@@ -8,7 +8,6 @@ import (
 	"github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 const testConfig1 = `
@@ -34,7 +33,7 @@ database:
 `
 
 type TestModel1 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -43,7 +42,7 @@ func (TestModel1) TableName() string {
 }
 
 type TestModel2 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -52,7 +51,7 @@ func (TestModel2) TableName() string {
 }
 
 type TestModel3 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -132,8 +131,8 @@ func (s *managerTestSuite) testCreatDAO() {
 
 func (s *managerTestSuite) testCreateDbWithTypeConfig() {
 	os.RemoveAll("hello5.db")
-	data.RegisterModelType(&TestModel1{})
-	data.RegisterModelType(&TestModel2{})
+	data.R(&TestModel1{})
+	data.R(&TestModel2{})
 
 	testConfig := `
 database:
@@ -163,8 +162,8 @@ database:
 }
 
 func (s *managerTestSuite) testCreateMutipleDbsWithTypeConfig() {
-	data.RegisterModelType(&TestModel1{})
-	data.RegisterModelType(&TestModel2{})
+	data.R(&TestModel1{})
+	data.R(&TestModel2{})
 
 	testConfig := `
 database:

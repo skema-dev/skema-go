@@ -84,24 +84,6 @@ func (e *elasticClientV7) Index(index string, id string, value interface{}) erro
 	return nil
 }
 
-func (e *elasticClientV7) processSearchResult(res *esapi.Response) ([]map[string]interface{}, error) {
-	resMap := map[string]interface{}{}
-	err := json.NewDecoder(res.Body).Decode(&resMap)
-	if err != nil {
-		return nil, logging.Errorf(err.Error())
-	}
-
-	h := resMap["hits"].(map[string]interface{})
-	hits := h["hits"].([]interface{})
-
-	result := []map[string]interface{}{}
-	for _, hit := range hits {
-		hitData := hit.(map[string]interface{})
-		result = append(result, hitData["_source"].(map[string]interface{}))
-	}
-	return result, nil
-}
-
 func (e *elasticClientV7) Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error) {
 	searchQuery, err := buildTermQuery(termQueryType, query)
 	if err != nil {
@@ -126,5 +108,14 @@ func (e *elasticClientV7) Search(index string, termQueryType string, query map[s
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
+
 	return processSearchResult(resMap)
+}
+
+func (e *elasticClientV7) Delete(index string, id string) {
+	_, err := e.client.Delete(index, id)
+	if err != nil {
+		logging.Errorf("failded to delete %s_%s: %s", index, id, err.Error())
+		return
+	}
 }

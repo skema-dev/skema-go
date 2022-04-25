@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/skema-dev/skema-go/config"
+	"github.com/skema-dev/skema-go/data"
 	db "github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 type SampleModel struct {
-	gorm.Model
+	data.Model
 	Name   string `gorm:"type:varchar(100);uniqueIndex:unique_name_sex;"`
 	Sex    string `gorm:"type:varchar(32);uniqueIndex:unique_name_sex;"`
 	Nation string

@@ -60,6 +60,10 @@ elastic:
 
 	result, _ = client.Search("test1", "terms", map[string]interface{}{"Name": []string{"user1", "user3"}})
 	intEquals(2, len(result))
+
+	result, _ = client.Search("test1", "match", map[string]interface{}{"Name": "1234"})
+	intEquals(0, len(result))
+
 }
 
 func stringEquals(expected string, actual string) {

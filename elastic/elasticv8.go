@@ -102,6 +102,7 @@ func (e *elasticClientV8) Search(index string, termQueryType string, query map[s
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
+
 	resMap := map[string]interface{}{}
 	err = json.NewDecoder(res.Body).Decode(&resMap)
 	if err != nil {
@@ -109,4 +110,12 @@ func (e *elasticClientV8) Search(index string, termQueryType string, query map[s
 	}
 
 	return processSearchResult(resMap)
+}
+
+func (e *elasticClientV8) Delete(index string, id string) {
+	_, err := e.client.Delete(index, id)
+	if err != nil {
+		logging.Errorf("failded to delete %s_%s: %s", index, id, err.Error())
+		return
+	}
 }

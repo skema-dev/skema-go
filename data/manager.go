@@ -38,7 +38,7 @@ func InitWithConfig(conf *config.Config, key string) {
 	dataMan = NewDataManager().WithConfig(conf, key)
 }
 
-func RegisterModelType(model DaoModel) {
+func R(model DaoModel) {
 	t := reflect.TypeOf(model).Elem()
 	pkgPath := t.PkgPath()
 	typeName := t.Name()
