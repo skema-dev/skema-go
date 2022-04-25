@@ -1,11 +1,13 @@
 package model
 
-import (
-	"gorm.io/gorm"
-)
+import "github.com/skema-dev/skema-go/data"
+
+func init() {
+	data.R(&Address{})
+}
 
 type Address struct {
-	gorm.Model
+	data.Model
 
 	UserUUID string `gorm:"column:user_uuid;index;unique;"`
 	Country  string

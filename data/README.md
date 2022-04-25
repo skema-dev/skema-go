@@ -1,5 +1,9 @@
-# Config Driven Database Setup
+# Skema-GO/Data
 
+Highlighted Features:
+- Config Driven  
+- Build in DAO support  
+- Build in CQRS with Elasticsearch support!!!  
 ## The Pain of Data Setup in Backend Development
 In most traditional development processes, you'll have to do quite some repetitive works to get your database setup. For example, the below code is pretty common:  
 ```
@@ -49,7 +53,7 @@ database:
 ```
 The above config defines all the properties for a mysql database. You can actually define multiple database connections as above by adding `db2` and the properties. 
 
-### Initialize data in your main() function
+### Initialize data everything with ONE line
 How about the code? Let's check out:  
 ```
 func main() {
@@ -73,8 +77,8 @@ import (
 )
 
 func init() {
-	data.RegisterModelType(&User{})  // since golang doesn't have reflect.Typeof(string) method, 
-                                     // we have to add this, so the config driven appraoch could work
+	data.R(&User{})  // since golang doesn't have reflect.Typeof(string) method, 
+                     // we have to add this, so the config driven appraoch could work
 }
 
 type User struct {
@@ -121,3 +125,31 @@ Just send in the model interface you need, and you'll get a DAO with CRUD capabi
 See, putting all your tedious database configuration in a yaml file, and simly add an init() function in your model definition. Load the config, and you are all set!!
 
 Checkout the `grpc-dao` sample and the unit tests code in `/data/manager_test.go` for more details.
+
+## CQRS !!!
+CQRS (Comamdn & Query Resposibility Segregation) is extremely important for today's internet applications.  
+Most CQRS approach relies on the application level or even business level logic segregation. As introduced in DDD approaches and the CQRS patterns introduced in [Azure CQRS pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/apply-simplified-microservice-cqrs-ddd-patterns).  
+However, for most developers, all they want is a seperate layer of data query and they don't want to change the code.  
+CQRS should be done in infrastructure layer, not the application layer.   
+  
+    
+With this idea beared in mind, and we also have our CRUD enabled DAO tool, we can simply embed elasticsearch into the DAO to perform data update and query through elasticsearch. Again, for the developer side, there is no code change. All the developer needs to do is adding a few lines in config file, kind like below:  
+```
+databases:
+  db1:
+    type: sqlite
+    filepath: default.db
+    dbname: test
+    automigrate: true
+    cqrs:
+       type: elastic
+       name: elastic-search
+
+elastic-search:
+    version: v7
+    addresses:
+        - http://localhost:9200
+
+```
+As we can see, there is a new tag `cqrs` for database setup, which points to the standalone elastic search setup in the config (in case user wants to use es alone. It's their choice). Just changing the config, everything else is the same.  
+You can refer to `/sample/elastic-test` and `/sample/dao-elastic-test` for more details.

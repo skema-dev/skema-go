@@ -1,11 +1,15 @@
 package model
 
 import (
-	"gorm.io/gorm"
+	"github.com/skema-dev/skema-go/data"
 )
 
+func init() {
+	data.R(&User{})
+}
+
 type User struct {
-	gorm.Model
+	data.Model
 
 	UUID   string `gorm:"column:uuid;index;unique;"`
 	Name   string

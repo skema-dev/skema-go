@@ -27,7 +27,7 @@ databases:
     filepath: default.db
     dbname: test
     automigrate: true
-    query:
+    cqrs:
        type: elastic
        name: elastic-search
 
@@ -43,7 +43,7 @@ databases:
     filepath: default.db
     dbname: test
     automigrate: true
-    query:
+    cqrs:
        type: elastic
        name: elastic-search
 

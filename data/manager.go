@@ -111,7 +111,7 @@ func (d *DataManager) AddDatabaseWithConfig(conf *config.Config, dbKey string, o
 	}
 
 	// check if elasticsearch is defined
-	queryConf := conf.GetSubConfig("query")
+	queryConf := conf.GetSubConfig("cqrs")
 	if queryConf != nil {
 		queryType := queryConf.GetString("type")
 		if queryType == "elastic" {
