@@ -127,11 +127,14 @@ See, putting all your tedious database configuration in a yaml file, and simly a
 Checkout the `grpc-dao` sample and the unit tests code in `/data/manager_test.go` for more details.
 
 ## CQRS !!!
-CQRS (Comamdn & Query Resposibility Segregation) is extremely important for today's internet applications.  
-Most CQRS approach relies on the application level or even business level logic segregation. As introduced in DDD approaches and the CQRS patterns introduced in [Azure CQRS pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/apply-simplified-microservice-cqrs-ddd-patterns).  
+CQRS (Command & Query Resposibility Segregation) is extremely important for today's internet applications.  
+Most CQRS approaches rely on the application level or even business level logic segregation, as introduced by DDD approaches and the CQRS patterns described in [Azure CQRS pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/apply-simplified-microservice-cqrs-ddd-patterns).  
 However, for most developers, all they want is a seperate layer of data query and they don't want to change the code.  
-CQRS should be done in infrastructure layer, not the application layer.   
-  
+CQRS should be done in infrastructure layer, not the application layer.  Put it short, there should be two concerns when doing CQRS for the underlying infrastructure:  
+- Mysql for persistent storage; Another dedicated datastore(usually elasticsearch, or another Mysql instance or whatever) for near-realtime search
+- Query is done by the  dedicated search engine for simple and fast search experience. 
+- For Command (create/update) actions, first write it to Mysql, and sync with the search engine server(e.g. Elasticsearch...).   
+
     
 With this idea beared in mind, and we also have our CRUD enabled DAO tool, we can simply embed elasticsearch into the DAO to perform data update and query through elasticsearch. Again, for the developer side, there is no code change. All the developer needs to do is adding a few lines in config file, kind like below:  
 ```
@@ -152,4 +155,14 @@ elastic-search:
 
 ```
 As we can see, there is a new tag `cqrs` for database setup, which points to the standalone elastic search setup in the config (in case user wants to use es alone. It's their choice). Just changing the config, everything else is the same.  
-You can refer to `/sample/elastic-test` and `/sample/dao-elastic-test` for more details.
+You can refer to `/sample/elastic-test` and `/sample/dao-elastic-test` for more details.  
+
+## A little bit about the CQRS implementing
+
+Using Elasticsearch and Mysql together seems pretty normal, but it could be easily on an incorrect path or ungraceful implementing. The trick here is better not to explicitly write code following other mysql operations, since this naive approach will kill the performance and is against the asynchronous idea behind CQRS. Two solutions could be done:   
+
+- using hooks (unfortunately this can only be done by user level code)
+- Using event notification and let a thread (goroutine in go programming) do the rest.  
+
+We take the 2nd approach by using the [event package](https://github.com/skema-dev/skema-go/tree/main/event) provided in this `skema-go` framework along.   
+Developers can use the same hooks like `AfterCreate` `AfterUpdate` of gorm to implement your hooks solution, but you need to do so in your data model struct. This should only be done if you have to use the original `gorm` method to do CRUD. In most cases, the `Create` `Update` `Upsert` `Delete` `Query` should be good enough and provides CQRS without any extra code.  

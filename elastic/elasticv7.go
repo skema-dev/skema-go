@@ -119,7 +119,7 @@ func (e *elasticClientV7) Search(index string, termQueryType string, query map[s
 
 func (e *elasticClientV7) Delete(index string, ids []string) {
 	searchQuery, err := buildTermQuery("terms", map[string]interface{}{"id": ids})
-
+	logging.Debugw("Delete es docs", "index", index, "ids", ids)
 	_, err = e.client.DeleteByQuery([]string{index}, strings.NewReader(searchQuery))
 	if err != nil {
 		logging.Errorf("failded to deletes: %s", err.Error())

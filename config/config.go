@@ -50,7 +50,6 @@ func NewConfigWithString(data string) *Config {
 func (c *Config) GetSubConfig(key string) *Config {
 	sub := c.viperData.Sub(key)
 	if sub == nil {
-		logging.Errorw("no config found", "key", key)
 		return nil
 	}
 

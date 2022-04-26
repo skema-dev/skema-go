@@ -13,6 +13,7 @@ Skema-Go is a Golang framework to simplify gRPC development by integrating vario
 - [Elasticsearch support](https://github.com/skema-dev/skema-go/tree/main/elastic)  
   Again, it's fully config driven.
 - [Redis support](https://github.com/skema-dev/skema-go/tree/main/redis)
+- [Event PubSub](https://github.com/skema-dev/skema-go/tree/main/event)
 
 ## grpcmux: gRPC + http service in 10 lines
 Talk is cheap. First, let's see how we can create a grpc server with http enabled in just 10 lines.
