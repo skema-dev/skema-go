@@ -8,7 +8,6 @@ import (
 	"github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 const testConfig1 = `
@@ -34,7 +33,7 @@ database:
 `
 
 type TestModel1 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -43,7 +42,7 @@ func (TestModel1) TableName() string {
 }
 
 type TestModel2 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -52,7 +51,7 @@ func (TestModel2) TableName() string {
 }
 
 type TestModel3 struct {
-	gorm.Model
+	data.Model
 	Name string
 }
 
@@ -83,7 +82,7 @@ func (s *managerTestSuite) testAddDbFromConfig() {
 	dbManager := data.NewDataManager()
 
 	for k, v := range configs {
-		dbManager.AddDatabaseWithConfig(&v, k)
+		dbManager.AddDatabaseWithConfig(&v, k, dbConfig)
 	}
 
 	db1 := dbManager.GetDB("db1")
@@ -115,7 +114,7 @@ func (s *managerTestSuite) testCreatDAO() {
 	dbConfig := config.NewConfigWithString(testConfig2)
 	data.InitWithConfig(dbConfig, "database")
 
-	dao := data.Manager().GetDaoForDb("db2", TestModel1{}, true)
+	dao := data.Manager().GetDaoForDb("db2", TestModel1{})
 	dao.Upsert(&TestModel1{
 		Name: "test1",
 	}, nil, nil)
@@ -132,8 +131,8 @@ func (s *managerTestSuite) testCreatDAO() {
 
 func (s *managerTestSuite) testCreateDbWithTypeConfig() {
 	os.RemoveAll("hello5.db")
-	data.RegisterModelType(&TestModel1{})
-	data.RegisterModelType(&TestModel2{})
+	data.R(&TestModel1{})
+	data.R(&TestModel2{})
 
 	testConfig := `
 database:
@@ -147,9 +146,7 @@ database:
             - TestModel2:
 `
 	data.InitWithConfig(config.NewConfigWithString(testConfig), "database")
-
 	assert.NotNil(s.T(), data.Manager().GetDAO(&TestModel1{}))
-	assert.Nil(s.T(), data.Manager().GetDAO(&TestModel3{}))
 
 	dao := data.Manager().GetDAO(&TestModel1{})
 	dao.Create(&TestModel1{Name: "aaaaa"})
@@ -163,8 +160,8 @@ database:
 }
 
 func (s *managerTestSuite) testCreateMutipleDbsWithTypeConfig() {
-	data.RegisterModelType(&TestModel1{})
-	data.RegisterModelType(&TestModel2{})
+	data.R(&TestModel1{})
+	data.R(&TestModel2{})
 
 	testConfig := `
 database:

@@ -2,10 +2,17 @@
 Skema-Go is a Golang framework to simplify gRPC development by integrating various opensource components for best practice.  
 
 ## Highlight Features  
-- grpcmux: grpc + http in an easy way, you can build one in less than 10 lines as below!
-- database: build-in CRUD capabilities for automatic DAO(Data Access Object) generating and registration. You no long need to struggle with database! Checkout [grpc-dao sample](https://github.com/skema-dev/skema-go/tree/main/sample/grpc-dao)
-- Feature Rich Configuration support
-
+- [grpcmux](https://github.com/skema-dev/skema-go/tree/main/grpcmux):   
+  grpc + http in an easy way, you can build one in less than 10 lines as below!
+- [data](https://github.com/skema-dev/skema-go/tree/main/data): 
+  No need to struggle with database! Everything is done in a simple yaml config. And it comes with  
+  - Config Driven (including table automigration via config)  
+  - Build in DAO with CRUD capability  
+  - Build in CQRS support with Elasticsearch (No code change!!!)
+  plese refer [skema-go/data](https://github.com/skema-dev/skema-go/tree/main/data) for more details
+- [Elasticsearch support](https://github.com/skema-dev/skema-go/tree/main/elastic)  
+  Again, it's fully config driven.
+- [Redis support](https://github.com/skema-dev/skema-go/tree/main/redis)
 
 ## grpcmux: gRPC + http service in 10 lines
 Talk is cheap. First, let's see how we can create a grpc server with http enabled in just 10 lines.
@@ -48,19 +55,24 @@ logging:
 Pretty Clear. We can define the grpc listening port and http port in the config, as well as some other features. If you've used Django, this is pretty much theh same idea.  
 <br/>
 
-## About the pkg
-Although it's design for grpc development, the following pkg could also be used individually.  
+## CQRS with Elasticsearch  
+Just use the following config, and the code is the same for our powerful DAO struct. CQRS has never been so easy!  
+```
+databases:
+  db1:
+    type: sqlite
+    filepath: default.db
+    dbname: test
+    automigrate: true
+    cqrs:
+       type: elastic
+       name: elastic-search
 
-* /config  
-  based on popular [github.com/spf13/viper](github.com/spf13/viper). It's used in grpcmux for configration handling.
-  
-* /logging  
-  based on popular [go.uber.org/zap](go.uber.org/zap). It's used as our standard logging solution.  
-
-* /grpcmux  
-  this is the core component to integrate grpc + http in a graceful way.  
-<br/>
-
+elastic-search:
+    version: v7
+    addresses:
+        - http://localhost:9200
+```
 
 ## To Run The Code in Test
 just download the repo and execute the commands below:  
@@ -125,6 +137,4 @@ service ServerReflection {
   rpc ServerReflectionInfo ( stream .grpc.reflection.v1alpha.ServerReflectionRequest ) returns ( stream .grpc.reflection.v1alpha.ServerReflectionResponse );
 }
 ```
-  
-
-Enjoy gRPC!
+Enjoy!

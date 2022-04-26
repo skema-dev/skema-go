@@ -3,6 +3,7 @@ package elastic
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"strings"
 
 	es "github.com/elastic/go-elasticsearch/v7"
@@ -16,6 +17,7 @@ type elasticClientV7 struct {
 }
 
 func newElasticClientV7(conf *config.Config) *elasticClientV7 {
+	var err error
 	addresses := conf.GetStringArray("addresses")
 	cfg := es.Config{
 		Addresses: addresses,
@@ -26,14 +28,24 @@ func newElasticClientV7(conf *config.Config) *elasticClientV7 {
 	if username != "" && password != "" {
 		cfg.Username = username
 		cfg.Password = password
+		logging.Debugf("Elastic Account  %s:%s", username, password)
+	}
+
+	var cert []byte
+	if certFile := conf.GetString("cert"); certFile != "" {
+		cert, err = ioutil.ReadFile("./http_ca.crt")
+		if err != nil {
+			logging.Fatalf("ERROR: Unable to read CA from %q: %s", certFile, err)
+		}
+		cfg.CACert = cert
 	}
 
 	esclient, err := es.NewClient(cfg)
 	if err != nil {
-		logging.Errorf(err.Error())
+		logging.Errorf("Failed creating es client: %s", err.Error())
 		return nil
 	}
-	esclient.Info()
+
 	if info, err := esclient.Info(); err == nil {
 		logging.Infof(info.String())
 	} else {
@@ -46,12 +58,17 @@ func newElasticClientV7(conf *config.Config) *elasticClientV7 {
 }
 
 func (e *elasticClientV7) Index(index string, id string, value interface{}) error {
+	if index == "" || id == "" {
+		return logging.Errorf("index and id should not be empty. index: %s, id: %s", index, id)
+	}
 	data, err := json.Marshal(value)
 	if err != nil {
 		return logging.Errorf(err.Error())
 	}
 
 	s := string(data)
+	logging.Debugw("elastic index request", "index", index, "id", id, "body", s)
+
 	req := esapi.IndexRequest{
 		Index:      index,
 		DocumentID: id,
@@ -70,24 +87,6 @@ func (e *elasticClientV7) Index(index string, id string, value interface{}) erro
 	}
 
 	return nil
-}
-
-func (e *elasticClientV7) processSearchResult(res *esapi.Response) ([]map[string]interface{}, error) {
-	resMap := map[string]interface{}{}
-	err := json.NewDecoder(res.Body).Decode(&resMap)
-	if err != nil {
-		return nil, logging.Errorf(err.Error())
-	}
-
-	h := resMap["hits"].(map[string]interface{})
-	hits := h["hits"].([]interface{})
-
-	result := []map[string]interface{}{}
-	for _, hit := range hits {
-		hitData := hit.(map[string]interface{})
-		result = append(result, hitData["_source"].(map[string]interface{}))
-	}
-	return result, nil
 }
 
 func (e *elasticClientV7) Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error) {
@@ -114,5 +113,30 @@ func (e *elasticClientV7) Search(index string, termQueryType string, query map[s
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
+
 	return processSearchResult(resMap)
+}
+
+func (e *elasticClientV7) Delete(index string, ids []string) {
+	searchQuery, err := buildTermQuery("terms", map[string]interface{}{"id": ids})
+
+	_, err = e.client.DeleteByQuery([]string{index}, strings.NewReader(searchQuery))
+	if err != nil {
+		logging.Errorf("failded to deletes: %s", err.Error())
+		return
+	}
+}
+
+func (e *elasticClientV7) DeleteIndex(indexes []string) {
+	req := esapi.IndicesDeleteRequest{
+		Index: indexes,
+	}
+
+	_, err := req.Do(context.Background(), e.client)
+	if err != nil {
+		logging.Errorf(err.Error())
+		return
+	}
+
+	logging.Debugf("index deleted %d", len(indexes))
 }

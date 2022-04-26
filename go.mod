@@ -8,10 +8,12 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.1.0
 	github.com/envoyproxy/protoc-gen-validate v0.1.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/testify v1.7.1
+	github.com/traefik/yaegi v0.11.3
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac
