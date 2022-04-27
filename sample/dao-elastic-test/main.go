@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/data"
@@ -13,6 +14,7 @@ import (
 type TestData struct {
 	data.Model
 	Name string
+	Age  int
 }
 
 func (TestData) TableName() string {
@@ -68,12 +70,13 @@ elastic-search:
 	dao.DeleteFromElastic([]string{indexName})
 
 	// no es enabled
-	data1 := TestData{Name: "user1"}
+	data1 := TestData{Name: "user1", Age: 10}
 	data1.UUID = "10-aaaaaa-bbbbbb-1"
 	// var err error
 	result := []TestData{}
 
 	dao.Create(&data1)
+	dao.Create(&TestData{Name: "user2", Age: 10})
 
 	fmt.Printf("******************Start Update database*******************\n")
 	result = []TestData{}
@@ -82,17 +85,20 @@ elastic-search:
 
 	data1.Name = "user1_3"
 	dao.Update(&data.QueryParams{"uuid": data1.UUID}, &data1)
-
+	time.Sleep((1 * time.Second))
 	fmt.Printf("******************Update Done!!*******************\n")
 
 	dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
 	stringEquals("user1_3", result[0].Name)
 
-	// fmt.Printf("******************With Elasticsearch*******************\n")
 	data1.Name = "user1_2"
 	dao.Update(&data.QueryParams{"uuid": data1.UUID}, &data1)
+	time.Sleep((1 * time.Second))
 	dao.Query(&data.QueryParams{"uuid": data1.UUID}, &result)
 	stringEquals("user1_2", result[0].Name)
+
+	dao.Query(&data.QueryParams{"age": 10}, &result, data.QueryOption{Offset: 1})
+	stringEquals("user2", result[0].Name)
 
 	fmt.Printf("All Done!\n")
 

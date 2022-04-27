@@ -33,7 +33,7 @@ const (
 	eventOnDaoDelete = "dao_event_create"
 )
 
-type EventData struct {
+type eventData struct {
 	TX    *gorm.DB
 	Value DaoModel
 }
@@ -59,7 +59,7 @@ func NewDAO(db *Database, model DaoModel) *DAO {
 
 	// initiate even calling
 	f := func(v interface{}) {
-		data := v.(*EventData)
+		data := v.(*eventData)
 		if data.TX.Error != nil {
 			logging.Errorf(data.TX.Error.Error())
 			return
@@ -104,7 +104,7 @@ func (d *DAO) Automigrate() {
 
 func (d *DAO) Create(value DaoModel) error {
 	tx := d.db.Create(value)
-	defer d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value})
+	defer d.pubsub.Publish(eventOnDaoCreate, &eventData{tx, value})
 
 	if tx.Error != nil {
 		logging.Errorf(tx.Error.Error())
@@ -115,7 +115,7 @@ func (d *DAO) Create(value DaoModel) error {
 
 func (d *DAO) Update(query *QueryParams, value DaoModel) error {
 	tx := d.db.Where(*query).Updates(value)
-	defer d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value})
+	defer d.pubsub.Publish(eventOnDaoCreate, &eventData{tx, value})
 
 	if tx.Error != nil {
 		return tx.Error
@@ -127,7 +127,7 @@ func (d *DAO) Update(query *QueryParams, value DaoModel) error {
 // Update if exists (by queryColumns), insert new one if not existing
 func (d *DAO) Upsert(value DaoModel, queryColumns []string, assignedColums []string) error {
 	var tx *gorm.DB
-	defer func() { d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value}) }()
+	defer func() { d.pubsub.Publish(eventOnDaoCreate, &eventData{tx, value}) }()
 
 	if queryColumns == nil || len(queryColumns) == 0 {
 		// no query columns exists, jut create new record
@@ -164,7 +164,9 @@ func (d *DAO) Query(
 	options ...QueryOption,
 ) error {
 	if d.es != nil {
-		return d.searchFromElastic(query, result, options...)
+		if esSearchErr := d.searchFromElastic(query, result, options...); esSearchErr == nil {
+			return nil
+		}
 	}
 
 	var tx *gorm.DB
@@ -273,7 +275,17 @@ func (d *DAO) searchFromElastic(
 		newQuery[fieldname] = v
 	}
 
-	founds, err := d.es.Search(d.esIndexName(), "match", newQuery)
+	var searchOption *elastic.SearchOption
+
+	if len(options) > 0 {
+		searchOption = &elastic.SearchOption{
+			From: options[0].Offset,
+			Size: options[0].Limit,
+			Sort: options[0].Order,
+		}
+	}
+
+	founds, err := d.es.Search(d.esIndexName(), "match", newQuery, searchOption)
 	if err != nil {
 		return logging.Errorf("Error happend when search from elastic for %s: %s", d.esIndexName(), err.Error())
 	}

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/skema-dev/skema-go/logging"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertMapToStruct(t *testing.T) {
@@ -27,4 +28,28 @@ func TestConvertMapToStruct(t *testing.T) {
 	ConvertMapToStruct(value, &result)
 
 	logging.Infof("%v", result)
+}
+
+func TestCreateOrderCondition(t *testing.T) {
+	s := "id desc"
+	sort := createSortCondition(s)
+	assert.Equal(t, 1, len(sort))
+	assert.Equal(t, "desc", sort[0]["id"])
+
+	s = "id desc   "
+	sort = createSortCondition(s)
+	assert.Equal(t, 1, len(sort))
+	assert.Equal(t, "desc", sort[0]["id"])
+
+	s = "id desc  ,    name asc"
+	sort = createSortCondition(s)
+	assert.Equal(t, 2, len(sort))
+	assert.Equal(t, "desc", sort[0]["id"])
+	assert.Equal(t, "asc", sort[1]["name"])
+
+	s = "id   ,    name   "
+	sort = createSortCondition(s)
+	assert.Equal(t, 2, len(sort))
+	assert.Equal(t, "desc", sort[0]["id"])
+	assert.Equal(t, "desc", sort[1]["name"])
 }

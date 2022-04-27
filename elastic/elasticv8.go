@@ -89,8 +89,8 @@ func (e *elasticClientV8) Index(index string, id string, value interface{}) erro
 	return nil
 }
 
-func (e *elasticClientV8) Search(index string, termQueryType string, query map[string]interface{}) ([]map[string]interface{}, error) {
-	searchQuery, err := buildTermQuery(termQueryType, query)
+func (e *elasticClientV8) Search(index string, termQueryType string, query map[string]interface{}, option *SearchOption) ([]map[string]interface{}, error) {
+	searchQuery, err := buildTermQuery(termQueryType, query, option)
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
@@ -107,6 +107,9 @@ func (e *elasticClientV8) Search(index string, termQueryType string, query map[s
 	if err != nil {
 		return nil, logging.Errorf(err.Error())
 	}
+	if res.IsError() {
+		return nil, logging.Errorf("Error happend for search %v", res)
+	}
 
 	resMap := map[string]interface{}{}
 	err = json.NewDecoder(res.Body).Decode(&resMap)
@@ -118,7 +121,7 @@ func (e *elasticClientV8) Search(index string, termQueryType string, query map[s
 }
 
 func (e *elasticClientV8) Delete(index string, ids []string) {
-	searchQuery, err := buildTermQuery("terms", map[string]interface{}{"id": ids})
+	searchQuery, err := buildTermQuery("terms", map[string]interface{}{"id": ids}, nil)
 
 	_, err = e.client.DeleteByQuery([]string{index}, strings.NewReader(searchQuery))
 	if err != nil {
