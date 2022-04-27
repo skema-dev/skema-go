@@ -218,14 +218,18 @@ func (d *DataManager) GetDaoForDb(dbKey string, model DaoModel) *DAO {
 		return nil
 	}
 
-	// newDao := DAO{db: db, model: model}
-	newDao := NewDAO(db, model)
 	dbs, ok := d.daoMap[dbKey]
 	if !ok {
 		dbs = make(map[string]DAO)
 		d.daoMap[dbKey] = dbs
 	}
 
+	daoIns, ok := d.daoMap[dbKey][model.TableName()]
+	if ok {
+		return &daoIns
+	}
+
+	newDao := NewDAO(db, model)
 	dbs[model.TableName()] = *newDao
 	logging.Debugw("DAO not found. New DAO created", "db", dbKey, "table", model.TableName())
 
