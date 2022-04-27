@@ -1,11 +1,11 @@
 package data
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 
 	"github.com/skema-dev/skema-go/elastic"
+	"github.com/skema-dev/skema-go/event"
 	"github.com/skema-dev/skema-go/logging"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -27,12 +27,24 @@ type DaoModel interface {
 	PrimaryID() string
 }
 
+const (
+	eventOnDaoCreate = "dao_event_create"
+	eventOnDaoUpdate = "dao_event_create"
+	eventOnDaoDelete = "dao_event_create"
+)
+
+type EventData struct {
+	TX    *gorm.DB
+	Value DaoModel
+}
 type DAO struct {
 	db            *Database
 	model         DaoModel
 	es            elastic.Elastic
 	columnToField map[string]string
 	fieldToColumn map[string]string
+
+	pubsub *event.PubSub
 }
 
 func NewDAO(db *Database, model DaoModel) *DAO {
@@ -41,8 +53,27 @@ func NewDAO(db *Database, model DaoModel) *DAO {
 		model:         model,
 		columnToField: map[string]string{},
 		fieldToColumn: map[string]string{},
+		pubsub:        event.NewPubSub(),
 	}
 	dao.initColumnFieldTable()
+
+	// initiate even calling
+	f := func(v interface{}) {
+		data := v.(*EventData)
+		if data.TX.Error != nil {
+			logging.Errorf(data.TX.Error.Error())
+			return
+		}
+		if data.TX.RowsAffected == 0 {
+			logging.Errorf("nothing changed. no update")
+			return
+		}
+
+		dao.UpdateElasticIndex(data.Value)
+	}
+
+	dao.pubsub.Subscribe(eventOnDaoUpdate, f)
+	dao.pubsub.Subscribe(eventOnDaoCreate, f)
 
 	return dao
 }
@@ -73,19 +104,18 @@ func (d *DAO) Automigrate() {
 
 func (d *DAO) Create(value DaoModel) error {
 	tx := d.db.Create(value)
-	defer d.TryUpdateIndex(tx, value)
+	defer d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value})
 
 	if tx.Error != nil {
 		logging.Errorf(tx.Error.Error())
 	}
 
-	fmt.Printf("create result: %d\n", tx.RowsAffected)
 	return tx.Error
 }
 
 func (d *DAO) Update(query *QueryParams, value DaoModel) error {
 	tx := d.db.Where(*query).Updates(value)
-	defer d.TryUpdateIndex(tx, value)
+	defer d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value})
 
 	if tx.Error != nil {
 		return tx.Error
@@ -97,7 +127,7 @@ func (d *DAO) Update(query *QueryParams, value DaoModel) error {
 // Update if exists (by queryColumns), insert new one if not existing
 func (d *DAO) Upsert(value DaoModel, queryColumns []string, assignedColums []string) error {
 	var tx *gorm.DB
-	defer func() { d.TryUpdateIndex(tx, value) }()
+	defer func() { d.pubsub.Publish(eventOnDaoCreate, &EventData{tx, value}) }()
 
 	if queryColumns == nil || len(queryColumns) == 0 {
 		// no query columns exists, jut create new record
@@ -168,22 +198,33 @@ func (d *DAO) Query(
 }
 
 func (d *DAO) Delete(query interface{}, args ...interface{}) error {
-	rs := []map[string]interface{}{}
-	tx := d.db.Model(&d.model).Where(query, args...).Find(&rs)
-	if tx.Error != nil {
-		return logging.Errorf(tx.Error.Error())
+	ch := make(chan error)
+	ids := make([]string, 0)
+
+	go func() {
+		rs := []map[string]interface{}{}
+		tx := d.db.Model(&d.model).Where(query, args...).Find(&rs)
+		if tx.Error != nil {
+			ch <- logging.Errorf(tx.Error.Error())
+			return
+		}
+
+		if len(rs) == 0 {
+			ch <- logging.Errorf("no matching record found")
+			return
+		}
+		for _, r := range rs {
+			ids = append(ids, r["uuid"].(string))
+		}
+		ch <- nil
+	}()
+	err := <-ch
+	if err != nil {
+		return err
 	}
 
-	if len(rs) == 0 {
-		logging.Debugf("no mathing record found")
-		return nil
-	}
-	ids := make([]string, 0)
-	for _, r := range rs {
-		ids = append(ids, r["uuid"].(string))
-	}
 	d.DeleteFromElastic(ids)
-	tx = d.db.Model(&d.model).Where(query, args...).Delete(&d.model)
+	tx := d.db.Model(&d.model).Where(query, args...).Delete(&d.model)
 	return tx.Error
 }
 
@@ -191,20 +232,20 @@ func (d *DAO) esIndexName() string {
 	return d.GetDB().Name() + "_" + d.model.TableName()
 }
 
-func (d *DAO) TryUpdateIndex(tx *gorm.DB, v DaoModel) {
-	if tx.Error != nil && tx.RowsAffected == 0 {
-		logging.Errorf("error happened or nothing updated.")
-		return
-	}
-	d.UpdateElasticIndex(v)
-}
-
 func (d *DAO) UpdateElasticIndex(data DaoModel) {
 	if d.es == nil {
 		return
 	}
 
-	d.es.Index(d.esIndexName(), data.PrimaryID(), data)
+	ch := make(chan error)
+	go func(c chan error) {
+		c <- d.es.Index(d.esIndexName(), data.PrimaryID(), data)
+	}(ch)
+
+	result := <-ch
+	if result != nil {
+		logging.Errorf("update index failed: %s", result.Error())
+	}
 }
 
 func (d *DAO) DeleteFromElastic(ids []string) {
