@@ -60,7 +60,7 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 
 	return &Database{
 		DB:          *db,
-		automigrate: conf.GetBool("automigrate", true),
+		automigrate: conf.GetBool("automigrate", false),
 	}, nil
 }
 
@@ -91,7 +91,7 @@ func NewSqliteDatabase(conf *config.Config) (*Database, error) {
 
 	return &Database{
 		DB:          *db,
-		automigrate: conf.GetBool("automigrate", true),
+		automigrate: conf.GetBool("automigrate", false),
 	}, nil
 }
 
@@ -128,6 +128,6 @@ func NewPostsqlDatabase(conf *config.Config) (*Database, error) {
 
 	return &Database{
 		DB:          *db,
-		automigrate: conf.GetBool("automigrate", true),
+		automigrate: conf.GetBool("automigrate", false),
 	}, nil
 }
