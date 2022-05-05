@@ -161,12 +161,9 @@ func (d *DataManager) initDaoModelForDb(dbkey string, models map[string]interfac
 			logging.Fatalw("incorrect definition for model", "model name", modelTypeName, "config", v)
 		}
 
-		d.GetDaoForDb(dbkey, daoModel)
-
-		db := d.GetDB(dbkey)
-
-		if db.automigrate {
-			db.AutoMigrate(daoModel)
+		dao := d.GetDaoForDb(dbkey, daoModel)
+		if dao == nil {
+			logging.Fatalf("failed to create dao for %s:%s", dbkey, daoModel.TableName())
 		}
 	}
 }
