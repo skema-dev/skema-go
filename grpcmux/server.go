@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	configSearchPaths = []string{"./grpc.yaml", "./config/grpc.yaml", "/config/grpc.yaml"}
+	configSearchPaths = []string{"./grpc.yaml", "./config/grpc.yaml", "/config/grpc.yaml", "./grpc.yml", "./config/grpc.yml", "/config/grpc.yml"}
 )
 
 type grpcServer struct {
