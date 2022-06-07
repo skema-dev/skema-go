@@ -10,6 +10,10 @@ func initComponents(conf *config.Config) {
 }
 
 func initLogging(conf *config.Config) {
+	if conf == nil {
+		return
+	}
+
 	level := conf.GetString("level", "debug")
 	encoding := conf.GetString("encoding", "console")
 	outputPath := conf.GetString("output", "")

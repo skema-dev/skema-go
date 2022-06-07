@@ -1,0 +1,6 @@
+port: 9991     # for grpc service
+http:
+  port: 9992   # for http service
+  gateway:
+    path: "/"  # this is the routing prefix if you need. You can force to append an extra path before all standard URLs
+
