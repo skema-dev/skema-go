@@ -1,5 +1,6 @@
 # Skema-Go
 Skema-Go is a Golang framework to simplify gRPC development by integrating various opensource components for best practice.  
+[SkemaBuild](https://github.com/skema-dev/skemabuild) is the official boilerplate toolkit to generate Skema-Go gRPC service code from protocol buffers. We would recommend skema-go users using the toolkit to generate initial code to make your life easier :). 
 
 ## Highlight Features  
 - [grpcmux](https://github.com/skema-dev/skema-go/tree/main/grpcmux):   
