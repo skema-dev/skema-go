@@ -7,7 +7,7 @@ import (
 
 type Model struct {
 	gorm.Model
-	UUID string `gorm:"column:uuid;not null;uniqueIndex"`
+	UUID string `gorm:"column:uuid;size:64;not null;uniqueIndex"`
 }
 
 func (m Model) PrimaryID() string {
