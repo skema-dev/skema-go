@@ -3,6 +3,7 @@ package data
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/elastic"
@@ -40,6 +41,8 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 	port := conf.GetInt("port")
 	dbname := conf.GetString("dbname")
 	charset := conf.GetString("charset", "utf8mb4")
+	retries := conf.GetInt("retry", 0)
+
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		username,
@@ -51,11 +54,13 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 	)
 
 	logging.Debugf("connecting to %s", dsn)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		logging.Errorf(err.Error())
-		return nil, err
+	db := retryConnectDatabase(retries, func() (*gorm.DB, error) {
+		return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	})
+	if db == nil {
+		return nil, errors.New("failed to connect db")
 	}
+
 	logging.Debugf("connectedto %s", dsn)
 
 	return &Database{
@@ -66,9 +71,11 @@ func NewMysqlDatabase(conf *config.Config) (*Database, error) {
 
 // initiate a sqlite db  for in-memeory implementing, and return the instance
 func NewMemoryDatabase(conf *config.Config) (*Database, error) {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-	if err != nil {
-		return nil, err
+	db := retryConnectDatabase(0, func() (*gorm.DB, error) {
+		return gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	})
+	if db == nil {
+		return nil, errors.New("failed to connect db")
 	}
 
 	return &Database{
@@ -84,9 +91,11 @@ func NewSqliteDatabase(conf *config.Config) (*Database, error) {
 		return nil, errors.New("sqlite filepath is not defined")
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbfile), &gorm.Config{})
-	if err != nil {
-		return nil, err
+	db := retryConnectDatabase(0, func() (*gorm.DB, error) {
+		return gorm.Open(sqlite.Open(dbfile), &gorm.Config{})
+	})
+	if db == nil {
+		return nil, errors.New("failed to connect db")
 	}
 
 	return &Database{
@@ -103,6 +112,7 @@ func NewPostsqlDatabase(conf *config.Config) (*Database, error) {
 	port := conf.GetInt("port")
 	dbname := conf.GetString("dbname")
 	timezone := conf.GetString("timezone", "Asia/Shanghai")
+	retries := conf.GetInt("retry", 0)
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
@@ -119,15 +129,37 @@ func NewPostsqlDatabase(conf *config.Config) (*Database, error) {
 	}
 
 	logging.Debugf("connecting to %s", dsn)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		logging.Errorf(err.Error())
-		return nil, err
+
+	db := retryConnectDatabase(retries, func() (*gorm.DB, error) {
+		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	})
+	if db == nil {
+		return nil, errors.New("failed to connect db")
 	}
+
 	logging.Debugf("connectedto %s", dsn)
 
 	return &Database{
 		DB:          *db,
 		automigrate: conf.GetBool("automigrate", false),
 	}, nil
+}
+
+func retryConnectDatabase(retryTimes int, fn func() (*gorm.DB, error)) *gorm.DB {
+	i := 0
+	for i <= retryTimes {
+		db, err := fn()
+		if err == nil {
+			return db
+		}
+		logging.Errorf(err.Error())
+
+		i += 1
+		if i <= retryTimes {
+			logging.Errorf("Failed to connect db. Attempt to retry in 3 seconds")
+			time.Sleep(3 * time.Second)
+		}
+	}
+
+	return nil
 }

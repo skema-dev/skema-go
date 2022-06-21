@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -48,6 +49,23 @@ func (s *databaseTestSuite) TestMemoryDb() {
 	sample = Sample{}
 	db.Where(&Sample{Name: "testuser2"}).First(&sample)
 	assert.Equal(s.T(), "england", sample.Nation)
+}
+
+func (s *databaseTestSuite) TestMysqlDb() {
+	mysqlConfigStr := `
+db1:
+  type: mysql
+  username: root
+  password: abcd
+  dbname: test
+  host: localhost
+  port: 3306
+  retry: 1
+`
+	dbConfig := config.NewConfigWithString(mysqlConfigStr)
+	db, err := data.NewMysqlDatabase(dbConfig.GetSubConfig("db1"))
+	assert.Nil(s.T(), db)
+	assert.NotNil(s.T(), err)
 }
 
 func TestDatabaseTestSuite(t *testing.T) {
