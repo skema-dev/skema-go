@@ -185,8 +185,8 @@ func (g *grpcServer) GetGatewayInfo() (context.Context, *runtime.ServeMux, grpc.
 }
 
 func (g *grpcServer) EnableSwagger(serviceName string, openapiDescFilepath string) error {
-	swaggerUrl := fmt.Sprintf("%s/swagger/openapi", serviceName)
-	swaggerServingUrl := fmt.Sprintf("%s/swagger", serviceName)
+	swaggerUrl := fmt.Sprintf("/%s/swagger/openapi", serviceName)
+	swaggerServingUrl := fmt.Sprintf("/%s/swagger", serviceName)
 
 	getSwagger := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		if content, err := ioutil.ReadFile(openapiDescFilepath); err == nil {
@@ -206,6 +206,8 @@ func (g *grpcServer) EnableSwagger(serviceName string, openapiDescFilepath strin
 
 	g.gatewayMux.HandlePath("GET", swaggerUrl, getSwagger)
 	g.gatewayMux.HandlePath("GET", swaggerServingUrl, swaggerServing)
+
+	logging.Infof("swagger enabled at url: %s\n", swaggerServingUrl)
 
 	return nil
 }
