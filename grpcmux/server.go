@@ -4,10 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/skema-dev/skema-go/config"
 	"github.com/skema-dev/skema-go/logging"
@@ -179,4 +182,30 @@ func (g *grpcServer) Serve() error {
 // GetGatewayInfo 返回Http网关相关信息
 func (g *grpcServer) GetGatewayInfo() (context.Context, *runtime.ServeMux, grpc.ClientConnInterface) {
 	return g.ctx, g.gatewayMux, g.clientConn
+}
+
+func (g *grpcServer) EnableSwagger(serviceName string, openapiDescFilepath string) error {
+	swaggerUrl := fmt.Sprintf("%s/swagger/openapi", serviceName)
+	swaggerServingUrl := fmt.Sprintf("%s/swagger", serviceName)
+
+	getSwagger := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		if content, err := ioutil.ReadFile(openapiDescFilepath); err == nil {
+			fmt.Fprint(w, string(content))
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	swaggerServing := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		t1, err := template.New("index").Parse(swaggerTpl)
+		if err != nil {
+			panic(err)
+		}
+		t1.Execute(w, swaggerUrl)
+	}
+
+	g.gatewayMux.HandlePath("GET", swaggerUrl, getSwagger)
+	g.gatewayMux.HandlePath("GET", swaggerServingUrl, swaggerServing)
+
+	return nil
 }
