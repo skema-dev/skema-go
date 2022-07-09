@@ -1,0 +1,25 @@
+port: 9991     # for grpc service
+http:
+  port: 9992   # for http service
+  gateway:
+     path: "/"
+  static:
+     path: "/web"
+     filepath: "./static"
+#  Another setting (you should modify the js code for backend api url)
+#  gateway:
+#    path: "/backend"
+#  static:
+#    path: "/"
+#    filepath: "./static"
+  swagger:
+     path: "/swagger"
+     filepath: "./swagger.json"
+client:
+  address: "localhost:9993"  # for grpc client url and port
+
+
+logging:
+  level: debug # info | debug
+  encoding: console # console | json
+  output: "./log/default.log"

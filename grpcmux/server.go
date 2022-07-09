@@ -4,16 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/skema-dev/skema-go/config"
+	"github.com/skema-dev/skema-go/logging"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
-	"text/template"
-
-	"github.com/skema-dev/skema-go/config"
-	"github.com/skema-dev/skema-go/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -60,6 +58,10 @@ func NewServerWithConfig(conf *config.Config, opts ...grpc.ServerOption) *grpcSe
 	}
 	logging.Infow("service port", "gprc", port, "http", httpPort)
 
+	if !validateHttpConfig(conf) {
+		logging.Fatalf("duplicated url path found. please fix the grpc config file")
+	}
+
 	// connect to grpc port
 	conn, err := grpc.DialContext(
 		context.Background(),
@@ -86,7 +88,6 @@ func NewServerWithConfig(conf *config.Config, opts ...grpc.ServerOption) *grpcSe
 				gatewayPathPrefix += "/"
 			}
 		}
-		logging.Infof("gateway path is set to %s", gatewayPathPrefix)
 	}
 
 	initComponents(conf)
@@ -136,6 +137,28 @@ func LoadLocalConfig() *config.Config {
 	return config.NewConfigWithFile(path)
 }
 
+func validateHttpConfig(conf *config.Config) bool {
+	gatewayPath := conf.GetString("http.gateway.path", "")
+	staticPath := conf.GetString("http.static.path", "")
+	swaggerPath := conf.GetString("http.swagger.path", "")
+
+	values := []string{gatewayPath, staticPath, swaggerPath}
+	for i := range values {
+		if values[i] == "" {
+			continue
+		}
+		j := i + 1
+		for j < len(values) {
+			if values[i] == values[j] {
+				logging.Errorf("duplicated url prefix path: %s, %s\n", values[i], values[j])
+				return false
+			}
+			j += 1
+		}
+	}
+	return true
+}
+
 // Requeired for grpc service registration
 func (g *grpcServer) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	g.server.RegisterService(desc, impl)
@@ -152,7 +175,7 @@ func (g *grpcServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, path)
 		r.RequestURI = strings.TrimPrefix(r.RequestURI, path)
 	}
-
+	logging.Infof("server http %s\n", r.URL.Path)
 	g.gatewayMux.ServeHTTP(w, r)
 }
 
@@ -161,6 +184,32 @@ func (g *grpcServer) Serve() error {
 	reflection.Register(g.server)
 
 	g.httpMux.Handle(g.gatewayRoutePath, g)
+	logging.Infof("grpc-gateway path: %s", g.gatewayRoutePath)
+
+	if g.conf.GetString("http.static.path", "") != "" {
+		staticPath := g.conf.GetString("http.static.path")
+		if !strings.HasSuffix(staticPath, "/") {
+			staticPath += "/"
+		}
+		staticFilepath := g.conf.GetString("http.static.filepath")
+		staticHandler := http.FileServer(http.Dir(staticFilepath))
+
+		g.httpMux.Handle(staticPath, http.StripPrefix(staticPath, staticHandler))
+
+		logging.Infof("static content(%s) path: %s", staticFilepath, staticPath)
+	}
+
+	if g.conf.GetString("http.swagger.path", "") != "" {
+		swaggerPath := g.conf.GetString("http.swagger.path")
+		swaggerPath = strings.TrimSuffix(swaggerPath, "/")
+		swaggerFilepath := g.conf.GetString("http.swagger.filepath")
+		swaggerHandler, openapiHandler := g.getSwaggerHandler(swaggerFilepath)
+
+		g.httpMux.Handle(swaggerPath, swaggerHandler)
+		g.httpMux.Handle(fmt.Sprintf("%s/openapi", swaggerPath), openapiHandler)
+
+		logging.Infof("swagger path: %s", swaggerPath)
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", g.port))
 	if err != nil {
@@ -184,11 +233,8 @@ func (g *grpcServer) GetGatewayInfo() (context.Context, *runtime.ServeMux, grpc.
 	return g.ctx, g.gatewayMux, g.clientConn
 }
 
-func (g *grpcServer) EnableSwagger(serviceName string, openapiDescFilepath string) error {
-	swaggerUrl := fmt.Sprintf("/%s/swagger/openapi", serviceName)
-	swaggerServingUrl := fmt.Sprintf("/%s/swagger", serviceName)
-
-	getSwagger := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+func (g *grpcServer) getSwaggerHandler(openapiDescFilepath string) (http.HandlerFunc, http.HandlerFunc) {
+	openapiHandler := func(w http.ResponseWriter, r *http.Request) {
 		if content, err := ioutil.ReadFile(openapiDescFilepath); err == nil {
 			fmt.Fprint(w, string(content))
 		} else {
@@ -196,18 +242,9 @@ func (g *grpcServer) EnableSwagger(serviceName string, openapiDescFilepath strin
 		}
 	}
 
-	swaggerServing := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		t1, err := template.New("index").Parse(swaggerTpl)
-		if err != nil {
-			panic(err)
-		}
-		t1.Execute(w, swaggerUrl)
+	swaggerHandler := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, swaggerTpl)
 	}
 
-	g.gatewayMux.HandlePath("GET", swaggerUrl, getSwagger)
-	g.gatewayMux.HandlePath("GET", swaggerServingUrl, swaggerServing)
-
-	logging.Infof("swagger enabled at url: %s\n", swaggerServingUrl)
-
-	return nil
+	return swaggerHandler, openapiHandler
 }
